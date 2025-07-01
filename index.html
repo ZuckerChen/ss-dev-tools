@@ -1,0 +1,545 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SS开发工具包</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/components/json-formatter.css">
+</head>
+<body>
+    <div class="app-container">
+        <!-- 头部导航 -->
+        <header class="header">
+            <div class="header-content">
+                <div class="header-left">
+                    <button id="sidebarToggle" class="sidebar-toggle-btn">☰</button>
+                    <h1 class="logo">SS开发工具包</h1>
+                </div>
+                <div class="theme-toggle">
+                    <button id="themeToggle" class="theme-btn">🌙</button>
+                </div>
+            </div>
+        </header>
+
+        <!-- 侧边栏 -->
+        <aside class="sidebar" id="sidebar">
+            <nav class="nav-menu">
+                <div class="nav-category">
+                    <h3 class="nav-category-title" data-category="json">
+                        <span class="category-icon">🔧</span>
+                        <span class="category-text">JSON工具</span>
+                        <span class="category-arrow">▼</span>
+                    </h3>
+                    <ul class="nav-category-items">
+                        <li><a href="#json-parser" data-tool="json-parser">JSON解析</a></li>
+                        <li><a href="#json-convert" data-tool="json-convert">JSON转换</a></li>
+                        <li><a href="#json-compare" data-tool="json-compare">JSON对比</a></li>
+                    </ul>
+                </div>
+                <div class="nav-category">
+                    <h3 class="nav-category-title" data-category="xml">
+                        <span class="category-icon">📄</span>
+                        <span class="category-text">XML工具</span>
+                        <span class="category-arrow">▼</span>
+                    </h3>
+                    <ul class="nav-category-items">
+                        <li><a href="#xml-parser" data-tool="xml-parser">XML解析</a></li>
+                    </ul>
+                </div>
+                <div class="nav-category">
+                    <h3 class="nav-category-title" data-category="encoding">
+                        <span class="category-icon">🔐</span>
+                        <span class="category-text">编码工具</span>
+                        <span class="category-arrow">▼</span>
+                    </h3>
+                    <ul class="nav-category-items">
+                        <li><a href="#base64" data-tool="base64">Base64加解密</a></li>
+                        <li><a href="#url-encode" data-tool="url-encode">URL编解码</a></li>
+                        <li><a href="#unicode" data-tool="unicode">Unicode中文互转</a></li>
+                    </ul>
+                </div>
+                <div class="nav-category">
+                    <h3 class="nav-category-title" data-category="utils">
+                        <span class="category-icon">⚡</span>
+                        <span class="category-text">实用工具</span>
+                        <span class="category-arrow">▼</span>
+                    </h3>
+                    <ul class="nav-category-items">
+                        <li><a href="#timestamp" data-tool="timestamp">时间戳转换</a></li>
+                        <li><a href="#qrcode" data-tool="qrcode">二维码生成</a></li>
+                        <li><a href="#qrcode-decode" data-tool="qrcode-decode">二维码解析</a></li>
+                        <li><a href="#image-compress" data-tool="image-compress">图片压缩</a></li>
+                    </ul>
+                </div>
+            </nav>
+        </aside>
+
+        <!-- 主内容区域 -->
+        <main class="main-content">
+            <!-- 首页欢迎页面 -->
+            <div id="home" class="tool-panel active">
+                <div class="welcome-section">
+                    <h2>欢迎使用SS开发工具包</h2>
+                    <p>一个完全离线的开发者工具集合，包含常用的编码转换、格式化、生成等功能。</p>
+                    <div class="feature-grid">
+                        <div class="feature-card">
+                            <h3>🔧 JSON工具</h3>
+                            <p>JSON解析、转换、对比等功能</p>
+                        </div>
+                        <div class="feature-card">
+                            <h3>🔐 编码工具</h3>
+                            <p>Base64、URL、Unicode等编码转换</p>
+                        </div>
+                        <div class="feature-card">
+                            <h3>⚡ 实用工具</h3>
+                            <p>时间戳、二维码、图片压缩等</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- JSON解析工具 -->
+            <div id="json-parser" class="tool-panel">
+                <div class="tool-header">
+                    <h2>JSON解析</h2>
+                    <p>格式化和美化JSON数据</p>
+                </div>
+                <div class="tool-content split-layout">
+                    <div class="split-left">
+                        <div class="input-section">
+                            <label for="jsonInput">输入JSON数据：</label>
+                            <textarea id="jsonInput" placeholder="请输入JSON数据..." rows="25"></textarea>
+                            <div class="button-group">
+                                <button id="formatJson" class="btn primary">格式化</button>
+                                <button id="compressJson" class="btn secondary">压缩</button>
+                                <button id="clearJson" class="btn secondary">清空</button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="split-right">
+                        <div class="output-section">
+                            <label>格式化结果：</label>
+                            <textarea id="jsonOutput" class="json-output-textarea" placeholder="格式化结果将在这里显示..." rows="25" readonly></textarea>
+                            <div class="button-group">
+                                <button id="copyJsonResult" class="btn secondary">复制结果</button>
+                                <button id="syncJsonResult" class="btn secondary">同步到输入</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- JSON转换工具 -->
+            <div id="json-convert" class="tool-panel">
+                <div class="tool-header">
+                    <h2>JSON转换</h2>
+                    <p>JSON与JavaBean相互转换</p>
+                </div>
+                <div class="tool-content">
+                    <div class="convert-tabs">
+                        <button class="tab-btn active" data-tab="json-to-java">JSON → JavaBean</button>
+                        <button class="tab-btn" data-tab="java-to-json">JavaBean → JSON</button>
+                    </div>
+                    <div id="json-to-java" class="tab-content active">
+                        <div class="input-section">
+                            <label for="jsonToJavaInput">输入JSON数据：</label>
+                            <textarea id="jsonToJavaInput" placeholder="请输入JSON数据..." rows="15"></textarea>
+                            <div class="options">
+                                <label><input type="text" id="className" placeholder="类名 (默认: MyClass)"></label>
+                                <div class="style-options">
+                                    <label class="radio-label">
+                                        <input type="radio" name="javaStyle" value="getter-setter" checked>
+                                        <span>传统 getter/setter</span>
+                                    </label>
+                                    <label class="radio-label">
+                                        <input type="radio" name="javaStyle" value="lombok">
+                                        <span>使用 Lombok</span>
+                                    </label>
+                                </div>
+                            </div>
+                            <button id="convertToJava" class="btn primary">转换为JavaBean</button>
+                        </div>
+                        <div class="output-section">
+                            <label>JavaBean代码：</label>
+                            <pre id="javaOutput" class="code-output"></pre>
+                            <button id="copyJavaResult" class="btn secondary">复制代码</button>
+                        </div>
+                    </div>
+                    <div id="java-to-json" class="tab-content">
+                        <div class="input-section">
+                            <label for="javaToJsonInput">输入JavaBean代码：</label>
+                            <textarea id="javaToJsonInput" placeholder="请输入JavaBean代码..." rows="15"></textarea>
+                            <button id="convertToJson" class="btn primary">转换为JSON</button>
+                        </div>
+                        <div class="output-section">
+                            <label>JSON数据：</label>
+                            <div id="jsonFromJavaOutput" class="json-output"></div>
+                            <button id="copyJsonFromJavaResult" class="btn secondary">复制结果</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- JSON对比工具 -->
+            <div id="json-compare" class="tool-panel">
+                <div class="tool-header">
+                    <h2>JSON对比</h2>
+                    <p>比较两个JSON数据的差异</p>
+                </div>
+                <div class="tool-content">
+                    <div class="compare-container">
+                        <div class="compare-input">
+                            <label for="jsonLeft">JSON A：</label>
+                            <textarea id="jsonLeft" placeholder="请输入第一个JSON..." rows="20"></textarea>
+                        </div>
+                        <div class="compare-controls">
+                            <button id="compareJson" class="btn primary">对比</button>
+                            <button id="clearCompare" class="btn secondary">清空</button>
+                        </div>
+                        <div class="compare-input">
+                            <label for="jsonRight">JSON B：</label>
+                            <textarea id="jsonRight" placeholder="请输入第二个JSON..." rows="20"></textarea>
+                        </div>
+                    </div>
+                    <div class="compare-result">
+                        <div id="compareOutput" class="compare-output"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- XML解析工具 -->
+            <div id="xml-parser" class="tool-panel">
+                <div class="tool-header">
+                    <h2>XML解析</h2>
+                    <p>格式化和美化XML数据</p>
+                </div>
+                <div class="tool-content split-layout">
+                    <div class="split-left">
+                        <div class="input-section">
+                            <label for="xmlInput">输入XML数据：</label>
+                            <textarea id="xmlInput" placeholder="请输入XML数据..." rows="25"></textarea>
+                            <div class="button-group">
+                                <button id="formatXml" class="btn primary">格式化</button>
+                                <button id="compressXml" class="btn secondary">压缩</button>
+                                <button id="clearXml" class="btn secondary">清空</button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="split-right">
+                        <div class="output-section">
+                            <label>格式化结果：</label>
+                            <textarea id="xmlOutput" class="xml-output-textarea" placeholder="格式化结果将在这里显示..." rows="25" readonly></textarea>
+                            <div class="button-group">
+                                <button id="copyXmlResult" class="btn secondary">复制结果</button>
+                                <button id="syncXmlResult" class="btn secondary">同步到输入</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Base64工具 -->
+            <div id="base64" class="tool-panel">
+                <div class="tool-header">
+                    <h2>Base64加解密</h2>
+                    <p>Base64编码和解码工具</p>
+                </div>
+                <div class="tool-content">
+                    <div class="encode-decode-tabs">
+                        <button class="tab-btn active" data-tab="base64-encode">编码</button>
+                        <button class="tab-btn" data-tab="base64-decode">解码</button>
+                    </div>
+                    <div id="base64-encode" class="tab-content active">
+                        <div class="input-section">
+                            <label for="base64EncodeInput">输入原文：</label>
+                            <textarea id="base64EncodeInput" placeholder="请输入要编码的文本..." rows="12"></textarea>
+                            <button id="encodeBase64" class="btn primary">编码</button>
+                        </div>
+                        <div class="output-section">
+                            <label>编码结果：</label>
+                            <textarea id="base64EncodeOutput" readonly rows="12"></textarea>
+                            <button id="copyBase64Encode" class="btn secondary">复制结果</button>
+                        </div>
+                    </div>
+                    <div id="base64-decode" class="tab-content">
+                        <div class="input-section">
+                            <label for="base64DecodeInput">输入Base64码：</label>
+                            <textarea id="base64DecodeInput" placeholder="请输入Base64编码..." rows="12"></textarea>
+                            <button id="decodeBase64" class="btn primary">解码</button>
+                        </div>
+                        <div class="output-section">
+                            <label>解码结果：</label>
+                            <textarea id="base64DecodeOutput" readonly rows="12"></textarea>
+                            <button id="copyBase64Decode" class="btn secondary">复制结果</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- URL编解码工具 -->
+            <div id="url-encode" class="tool-panel">
+                <div class="tool-header">
+                    <h2>URL编解码</h2>
+                    <p>URL编码和解码工具</p>
+                </div>
+                <div class="tool-content">
+                    <div class="encode-decode-tabs">
+                        <button class="tab-btn active" data-tab="url-encode-tab">编码</button>
+                        <button class="tab-btn" data-tab="url-decode-tab">解码</button>
+                    </div>
+                    <div id="url-encode-tab" class="tab-content active">
+                        <div class="input-section">
+                            <label for="urlEncodeInput">输入URL：</label>
+                            <textarea id="urlEncodeInput" placeholder="请输入要编码的URL..." rows="12"></textarea>
+                            <button id="encodeUrl" class="btn primary">编码</button>
+                        </div>
+                        <div class="output-section">
+                            <label>编码结果：</label>
+                            <textarea id="urlEncodeOutput" readonly rows="12"></textarea>
+                            <button id="copyUrlEncode" class="btn secondary">复制结果</button>
+                        </div>
+                    </div>
+                    <div id="url-decode-tab" class="tab-content">
+                        <div class="input-section">
+                            <label for="urlDecodeInput">输入编码后的URL：</label>
+                            <textarea id="urlDecodeInput" placeholder="请输入编码后的URL..." rows="12"></textarea>
+                            <button id="decodeUrl" class="btn primary">解码</button>
+                        </div>
+                        <div class="output-section">
+                            <label>解码结果：</label>
+                            <textarea id="urlDecodeOutput" readonly rows="12"></textarea>
+                            <button id="copyUrlDecode" class="btn secondary">复制结果</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Unicode中文互转工具 -->
+            <div id="unicode" class="tool-panel">
+                <div class="tool-header">
+                    <h2>Unicode中文互转</h2>
+                    <p>Unicode编码和中文相互转换</p>
+                </div>
+                <div class="tool-content">
+                    <div class="encode-decode-tabs">
+                        <button class="tab-btn active" data-tab="unicode-encode-tab">中文转Unicode</button>
+                        <button class="tab-btn" data-tab="unicode-decode-tab">Unicode转中文</button>
+                    </div>
+                    <div id="unicode-encode-tab" class="tab-content active">
+                        <div class="input-section">
+                            <label for="unicodeEncodeInput">输入中文：</label>
+                            <textarea id="unicodeEncodeInput" placeholder="请输入中文字符..." rows="12"></textarea>
+                            <button id="encodeUnicode" class="btn primary">转换为Unicode</button>
+                        </div>
+                        <div class="output-section">
+                            <label>Unicode编码：</label>
+                            <textarea id="unicodeEncodeOutput" readonly rows="12"></textarea>
+                            <button id="copyUnicodeEncode" class="btn secondary">复制结果</button>
+                        </div>
+                    </div>
+                    <div id="unicode-decode-tab" class="tab-content">
+                        <div class="input-section">
+                            <label for="unicodeDecodeInput">输入Unicode编码：</label>
+                            <textarea id="unicodeDecodeInput" placeholder="请输入Unicode编码..." rows="12"></textarea>
+                            <button id="decodeUnicode" class="btn primary">转换为中文</button>
+                        </div>
+                        <div class="output-section">
+                            <label>中文结果：</label>
+                            <textarea id="unicodeDecodeOutput" readonly rows="12"></textarea>
+                            <button id="copyUnicodeDecode" class="btn secondary">复制结果</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 时间戳转换工具 -->
+            <div id="timestamp" class="tool-panel">
+                <div class="tool-header">
+                    <h2>Unix时间戳转换</h2>
+                    <p>时间戳与日期时间相互转换</p>
+                </div>
+                <div class="tool-content">
+                    <div class="timestamp-info">
+                        <div class="current-time">
+                            <h3>当前时间</h3>
+                            <div id="currentTimestamp" class="timestamp-display"></div>
+                            <div id="currentDateTime" class="datetime-display"></div>
+                        </div>
+                    </div>
+                    <div class="convert-tabs">
+                        <button class="tab-btn active" data-tab="timestamp-to-date">时间戳转日期</button>
+                        <button class="tab-btn" data-tab="date-to-timestamp">日期转时间戳</button>
+                    </div>
+                    <div id="timestamp-to-date" class="tab-content active">
+                        <div class="input-section">
+                            <label for="timestampInput">输入时间戳：</label>
+                            <input type="text" id="timestampInput" placeholder="请输入时间戳（秒或毫秒）">
+                            <div class="options">
+                                <label><input type="radio" name="timestampUnit" value="seconds" checked> 秒</label>
+                                <label><input type="radio" name="timestampUnit" value="milliseconds"> 毫秒</label>
+                            </div>
+                            <button id="convertTimestamp" class="btn primary">转换</button>
+                        </div>
+                        <div class="output-section">
+                            <label>转换结果：</label>
+                            <div id="timestampResult" class="result-display"></div>
+                        </div>
+                    </div>
+                    <div id="date-to-timestamp" class="tab-content">
+                        <div class="input-section">
+                            <label for="dateTimeInput">选择日期时间：</label>
+                            <input type="datetime-local" id="dateTimeInput">
+                            <button id="convertDateTime" class="btn primary">转换</button>
+                        </div>
+                        <div class="output-section">
+                            <label>转换结果：</label>
+                            <div id="dateTimeResult" class="result-display"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 二维码生成工具 -->
+            <div id="qrcode" class="tool-panel">
+                <div class="tool-header">
+                    <h2>二维码生成</h2>
+                    <p>生成各种类型的二维码</p>
+                </div>
+                <div class="tool-content">
+                    <div class="input-section">
+                        <label for="qrcodeInput">输入内容：</label>
+                        <textarea id="qrcodeInput" placeholder="请输入要生成二维码的内容..." rows="4"></textarea>
+                        <div class="qrcode-options">
+                            <div class="option-group">
+                                <label for="qrcodeSize">尺寸：</label>
+                                <select id="qrcodeSize">
+                                    <option value="128">128x128</option>
+                                    <option value="256" selected>256x256</option>
+                                    <option value="512">512x512</option>
+                                </select>
+                            </div>
+                            <div class="option-group">
+                                <label for="qrcodeColor">前景色：</label>
+                                <input type="color" id="qrcodeColor" value="#000000">
+                            </div>
+                            <div class="option-group">
+                                <label for="qrcodeBgColor">背景色：</label>
+                                <input type="color" id="qrcodeBgColor" value="#ffffff">
+                            </div>
+                        </div>
+                        <button id="generateQrcode" class="btn primary">生成二维码</button>
+                    </div>
+                    <div class="output-section">
+                        <label>生成结果：</label>
+                        <div id="qrcodeOutput" class="qrcode-container"></div>
+                        <button id="downloadQrcode" class="btn secondary" style="display: none;">下载二维码</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 二维码解析工具 -->
+            <div id="qrcode-decode" class="tool-panel">
+                <div class="tool-header">
+                    <h2>二维码解析</h2>
+                    <p>上传图片或截图解析二维码内容</p>
+                </div>
+                <div class="tool-content split-layout">
+                    <div class="split-left">
+                        <div class="input-section">
+                            <label for="qrcodeImageInput">选择二维码图片：</label>
+                            <input type="file" id="qrcodeImageInput" accept="image/*" class="file-input">
+                            <div class="upload-area" id="qrcodeUploadArea">
+                                <div class="upload-icon">📷</div>
+                                <div class="upload-text">
+                                    <p>点击选择图片或拖拽图片到此处</p>
+                                    <p class="upload-tip">支持 JPG、PNG、GIF 等格式</p>
+                                </div>
+                            </div>
+                            <div class="button-group">
+                                <button id="decodeQrcode" class="btn primary" disabled>解析二维码</button>
+                                <button id="clearQrcodeDecode" class="btn secondary">清空</button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="split-right">
+                        <div class="output-section">
+                            <div class="decode-preview">
+                                <div class="preview-item">
+                                    <h4>图片预览</h4>
+                                    <div id="qrcodePreview" class="image-container"></div>
+                                </div>
+                                <div class="preview-item">
+                                    <h4>解析结果</h4>
+                                    <div id="qrcodeDecodeResult" class="decode-result"></div>
+                                    <button id="copyQrcodeResult" class="btn secondary" style="display: none;">复制结果</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 图片压缩工具 -->
+            <div id="image-compress" class="tool-panel">
+                <div class="tool-header">
+                    <h2>图片压缩</h2>
+                    <p>在线压缩图片文件大小</p>
+                </div>
+                <div class="tool-content">
+                    <div class="input-section">
+                        <label for="imageInput">选择图片：</label>
+                        <input type="file" id="imageInput" accept="image/*" class="file-input">
+                        <div class="compress-options">
+                            <div class="option-group">
+                                <label for="compressQuality">压缩质量：</label>
+                                <input type="range" id="compressQuality" min="10" max="100" value="80">
+                                <span id="qualityValue">80%</span>
+                            </div>
+                            <div class="option-group">
+                                <label for="maxWidth">最大宽度：</label>
+                                <input type="number" id="maxWidth" placeholder="不限制" min="100">
+                            </div>
+                            <div class="option-group">
+                                <label for="maxHeight">最大高度：</label>
+                                <input type="number" id="maxHeight" placeholder="不限制" min="100">
+                            </div>
+                        </div>
+                        <button id="compressImage" class="btn primary" disabled>压缩图片</button>
+                    </div>
+                    <div class="output-section">
+                        <div class="image-preview">
+                            <div class="preview-item">
+                                <h4>原图</h4>
+                                <div id="originalPreview" class="image-container"></div>
+                                <div id="originalInfo" class="image-info"></div>
+                            </div>
+                            <div class="preview-item">
+                                <h4>压缩后</h4>
+                                <div id="compressedPreview" class="image-container"></div>
+                                <div id="compressedInfo" class="image-info"></div>
+                                <button id="downloadCompressed" class="btn secondary" style="display: none;">下载压缩图片</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- 模块化JavaScript架构 -->
+    <!-- 核心基础类 -->
+    <script src="js/core/base-tool.js"></script>
+    
+    <!-- 工具模块 -->
+    <script src="js/tools/json-tool.js"></script>
+    <script src="js/tools/xml-tool.js"></script>
+    <script src="js/tools/encoding-tool.js"></script>
+    
+    <!-- 工具库 -->
+    <script src="js/utils/qrcode.min.js"></script>
+    
+    <!-- 主应用控制器 -->
+    <script src="js/app.js"></script>
+</body>
+</html> 
