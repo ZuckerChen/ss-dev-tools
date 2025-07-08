@@ -16,6 +16,9 @@ class SSDevToolsApp {
         this.initTools();
         this.addAnimationStyles();
         
+        this.initQrcodeTool();
+        this.initQrcodeDecodeTool(); // 新增：初始化二维码解析工具
+        
         console.log('📦 SS开发工具包启动成功！');
         console.log('🔧 已加载工具模块:', Array.from(this.tools.keys()));
     }
@@ -325,6 +328,176 @@ class SSDevToolsApp {
             }
         `;
         document.head.appendChild(style);
+    }
+
+    /**
+     * 初始化二维码生成工具
+     */
+    initQrcodeTool() {
+        const btn = document.getElementById('generateQrcode');
+        if (!btn) return;
+        btn.addEventListener('click', function() {
+            const text = document.getElementById('qrcodeInput').value.trim();
+            const size = parseInt(document.getElementById('qrcodeSize').value, 10);
+            const color = document.getElementById('qrcodeColor').value;
+            const bgColor = document.getElementById('qrcodeBgColor').value;
+            const output = document.getElementById('qrcodeOutput');
+            output.innerHTML = '';
+            if (!text) {
+                alert('请输入要生成二维码的内容');
+                return;
+            }
+            // 使用qrcodejs2标准库生成二维码
+            const qrcode = new QRCode(output, {
+                text: text,
+                width: size,
+                height: size,
+                colorDark: color,
+                colorLight: bgColor,
+                correctLevel: QRCode.CorrectLevel.H
+            });
+            // 显示下载按钮
+            const downloadBtn = document.getElementById('downloadQrcode');
+            if (downloadBtn) {
+                downloadBtn.style.display = '';
+                downloadBtn.onclick = function() {
+                    // 获取canvas或img
+                    let img = output.querySelector('img');
+                    let url = '';
+                    if (img) {
+                        url = img.src;
+                    } else {
+                        // fallback: canvas
+                        const canvas = output.querySelector('canvas');
+                        if (canvas) url = canvas.toDataURL('image/png');
+                    }
+                    if (url) {
+                        const a = document.createElement('a');
+                        a.href = url;
+                        a.download = 'qrcode.png';
+                        a.click();
+                    }
+                };
+            }
+        });
+    }
+
+    /**
+     * 初始化二维码解析工具
+     */
+    initQrcodeDecodeTool() {
+        const fileInput = document.getElementById('qrcodeImageInput');
+        const decodeBtn = document.getElementById('decodeQrcode');
+        const clearBtn = document.getElementById('clearQrcodeDecode');
+        const uploadArea = document.getElementById('qrcodeUploadArea');
+        const preview = document.getElementById('qrcodePreview');
+        const result = document.getElementById('qrcodeDecodeResult');
+        const copyBtn = document.getElementById('copyQrcodeResult');
+
+        if (!fileInput || !decodeBtn || !uploadArea || !preview || !result) return;
+
+        // 文件选择激活按钮和预览
+        fileInput.addEventListener('change', function() {
+            if (fileInput.files && fileInput.files.length > 0) {
+                decodeBtn.disabled = false;
+                showImagePreview(fileInput.files[0]);
+            } else {
+                decodeBtn.disabled = true;
+                preview.innerHTML = '';
+            }
+            result.innerHTML = '';
+            copyBtn && (copyBtn.style.display = 'none');
+        });
+
+        // 拖拽上传
+        uploadArea.addEventListener('dragover', function(e) {
+            e.preventDefault();
+            uploadArea.classList.add('dragover');
+        });
+        uploadArea.addEventListener('dragleave', function(e) {
+            e.preventDefault();
+            uploadArea.classList.remove('dragover');
+        });
+        uploadArea.addEventListener('drop', function(e) {
+            e.preventDefault();
+            uploadArea.classList.remove('dragover');
+            const files = e.dataTransfer.files;
+            if (files && files.length > 0) {
+                fileInput.files = files;
+                decodeBtn.disabled = false;
+                showImagePreview(files[0]);
+            }
+            result.innerHTML = '';
+            copyBtn && (copyBtn.style.display = 'none');
+        });
+
+        // 点击上传区域也触发文件选择
+        uploadArea.addEventListener('click', function() {
+            fileInput.click();
+        });
+
+        // 解析二维码按钮
+        decodeBtn.addEventListener('click', function() {
+            if (!fileInput.files || fileInput.files.length === 0) return;
+            const file = fileInput.files[0];
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const img = new Image();
+                img.onload = function() {
+                    const canvas = document.createElement('canvas');
+                    canvas.width = img.width;
+                    canvas.height = img.height;
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0, img.width, img.height);
+                    const imageData = ctx.getImageData(0, 0, img.width, img.height);
+                    if (window.jsQR) {
+                        const code = window.jsQR(imageData.data, imageData.width, imageData.height);
+                        if (code && code.data) {
+                            result.innerHTML = `<span style='color: #22c55e;'>${code.data}</span>`;
+                            if (copyBtn) {
+                                copyBtn.style.display = '';
+                                copyBtn.onclick = function() {
+                                    navigator.clipboard.writeText(code.data);
+                                    copyBtn.innerText = '已复制';
+                                    setTimeout(() => { copyBtn.innerText = '复制结果'; }, 1200);
+                                };
+                            }
+                        } else {
+                            result.innerHTML = '<span style="color: #f87171;">未识别到二维码内容</span>';
+                            copyBtn && (copyBtn.style.display = 'none');
+                        }
+                    } else {
+                        result.innerHTML = '<span style="color: #f87171;">jsQR库未正确加载</span>';
+                        copyBtn && (copyBtn.style.display = 'none');
+                    }
+                };
+                img.src = e.target.result;
+                preview.innerHTML = '';
+                preview.appendChild(img);
+            };
+            reader.readAsDataURL(file);
+        });
+
+        // 清空按钮
+        clearBtn && clearBtn.addEventListener('click', function() {
+            fileInput.value = '';
+            preview.innerHTML = '';
+            result.innerHTML = '';
+            decodeBtn.disabled = true;
+            copyBtn && (copyBtn.style.display = 'none');
+        });
+
+        // 预览图片
+        function showImagePreview(file) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const img = new Image();
+                img.src = e.target.result;
+                preview.innerHTML = '';
+                preview.appendChild(img);
+            };
+            reader.readAsDataURL(file);
+        }
     }
 }
 
