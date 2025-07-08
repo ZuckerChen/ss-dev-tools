@@ -120,7 +120,7 @@
                     <div class="split-right">
                         <div class="output-section">
                             <label>格式化结果：</label>
-                            <textarea id="jsonOutput" class="json-output-textarea" placeholder="格式化结果将在这里显示..." rows="25" readonly></textarea>
+                            <div id="jsonOutput" class="collapsible-output" data-placeholder="格式化结果将在这里显示..."></div>
                             <div class="button-group">
                                 <button id="copyJsonResult" class="btn secondary">复制结果</button>
                                 <button id="syncJsonResult" class="btn secondary">同步到输入</button>
@@ -229,7 +229,7 @@
                     <div class="split-right">
                         <div class="output-section">
                             <label>格式化结果：</label>
-                            <textarea id="xmlOutput" class="xml-output-textarea" placeholder="格式化结果将在这里显示..." rows="25" readonly></textarea>
+                            <div id="xmlOutput" class="collapsible-output" data-placeholder="格式化结果将在这里显示..."></div>
                             <div class="button-group">
                                 <button id="copyXmlResult" class="btn secondary">复制结果</button>
                                 <button id="syncXmlResult" class="btn secondary">同步到输入</button>
@@ -530,6 +530,7 @@
     <!-- 模块化JavaScript架构 -->
     <!-- 核心基础类 -->
     <script src="js/core/base-tool.js"></script>
+    <script src="js/core/collapsible-formatter.js"></script>
     
     <!-- 工具模块 -->
     <script src="js/tools/json-tool.js"></script>
