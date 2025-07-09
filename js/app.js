@@ -19,6 +19,10 @@ class SSDevToolsApp {
         this.initQrcodeTool();
         this.initQrcodeDecodeTool(); // 新增：初始化二维码解析工具
         
+        // 新增：初始化时间戳工具
+        this.initTimestampTool();
+        this.updateCurrentTime();
+        
         console.log('📦 SS开发工具包启动成功！');
         console.log('🔧 已加载工具模块:', Array.from(this.tools.keys()));
     }
@@ -497,6 +501,99 @@ class SSDevToolsApp {
                 preview.appendChild(img);
             };
             reader.readAsDataURL(file);
+        }
+    }
+
+    // 初始化时间戳转换工具
+    initTimestampTool() {
+        const convertTimestampBtn = document.getElementById('convertTimestamp');
+        const convertDateTimeBtn = document.getElementById('convertDateTime');
+        if (convertTimestampBtn) {
+            convertTimestampBtn.addEventListener('click', () => {
+                this.convertTimestampToDate();
+            });
+        }
+        if (convertDateTimeBtn) {
+            convertDateTimeBtn.addEventListener('click', () => {
+                this.convertDateToTimestamp();
+            });
+        }
+        // 设置当前时间为默认值
+        const now = new Date();
+        const localDateTime = new Date(now.getTime() - (now.getTimezoneOffset() * 60000))
+            .toISOString().slice(0, 16);
+        const dateTimeInput = document.getElementById('dateTimeInput');
+        if (dateTimeInput) {
+            dateTimeInput.value = localDateTime;
+        }
+    }
+
+    // 定时显示当前时间
+    updateCurrentTime() {
+        const updateTime = () => {
+            const now = new Date();
+            const timestamp = Math.floor(now.getTime() / 1000);
+            const dateTime = now.toLocaleString('zh-CN');
+            const timestampDisplay = document.getElementById('currentTimestamp');
+            const dateTimeDisplay = document.getElementById('currentDateTime');
+            if (timestampDisplay) timestampDisplay.textContent = timestamp;
+            if (dateTimeDisplay) dateTimeDisplay.textContent = dateTime;
+        };
+        updateTime();
+        setInterval(updateTime, 1000);
+    }
+
+    // 时间戳转日期
+    convertTimestampToDate() {
+        const input = document.getElementById('timestampInput').value.trim();
+        const output = document.getElementById('timestampResult');
+        const unitRadio = document.querySelector('input[name="timestampUnit"]:checked');
+        const unit = unitRadio ? unitRadio.value : 'seconds';
+        if (!input) {
+            if (output) output.innerHTML = '请输入时间戳';
+            return;
+        }
+        try {
+            let timestamp = parseInt(input);
+            if (unit === 'seconds') {
+                timestamp *= 1000;
+            }
+            const date = new Date(timestamp);
+            const result = `
+                <div><strong>本地时间:</strong> ${date.toLocaleString('zh-CN')}</div>
+                <div><strong>UTC时间:</strong> ${date.toUTCString()}</div>
+                <div><strong>ISO格式:</strong> ${date.toISOString()}</div>
+                <div><strong>Unix时间戳(秒):</strong> ${Math.floor(timestamp / 1000)}</div>
+                <div><strong>Unix时间戳(毫秒):</strong> ${timestamp}</div>
+            `;
+            if (output) output.innerHTML = result;
+        } catch (error) {
+            if (output) output.innerHTML = `转换错误: ${error.message}`;
+        }
+    }
+
+    // 日期转时间戳
+    convertDateToTimestamp() {
+        const input = document.getElementById('dateTimeInput').value;
+        const output = document.getElementById('dateTimeResult');
+        if (!input) {
+            if (output) output.innerHTML = '请选择日期时间';
+            return;
+        }
+        try {
+            const date = new Date(input);
+            const timestamp = date.getTime();
+            const timestampSeconds = Math.floor(timestamp / 1000);
+            const result = `
+                <div><strong>Unix时间戳(秒):</strong> ${timestampSeconds}</div>
+                <div><strong>Unix时间戳(毫秒):</strong> ${timestamp}</div>
+                <div><strong>本地时间:</strong> ${date.toLocaleString('zh-CN')}</div>
+                <div><strong>UTC时间:</strong> ${date.toUTCString()}</div>
+                <div><strong>ISO格式:</strong> ${date.toISOString()}</div>
+            `;
+            if (output) output.innerHTML = result;
+        } catch (error) {
+            if (output) output.innerHTML = `转换错误: ${error.message}`;
         }
     }
 }
