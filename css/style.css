@@ -196,7 +196,7 @@ body {
 
 .nav-category-items {
     list-style: none;
-    max-height: 200px;
+    max-height: 1000px; /* 展开状态允许更多条目 */
     overflow: hidden;
     transition: max-height 0.3s ease;
 }
