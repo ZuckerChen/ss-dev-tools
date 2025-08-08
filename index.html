@@ -368,8 +368,8 @@
                             <div class="option-group">
                                 <label>风格：</label>
                                 <div class="radio-group">
-                                    <label><input type="radio" name="cronStyle" value="unix" checked> 普通(Unix)</label>
-                                    <label><input type="radio" name="cronStyle" value="quartz"> Quartz</label>
+                                    <label><input type="radio" name="cronStyle" value="unix"> 普通(Unix)</label>
+                                    <label><input type="radio" name="cronStyle" value="quartz" checked> Quartz</label>
                                 </div>
                             </div>
                             <div class="option-group">
@@ -378,14 +378,19 @@
                             <div class="option-group">
                                 <label>常用场景：</label>
                                 <div class="radio-group">
+                                        <label><input type="radio" name="cronPreset" value="everyNSeconds"> 每N秒</label>
                                     <label><input type="radio" name="cronPreset" value="everyNMinutes" checked> 每N分钟</label>
                                     <label><input type="radio" name="cronPreset" value="hourlyAt"> 每小时的固定分钟</label>
                                     <label><input type="radio" name="cronPreset" value="dailyAt"> 每天固定时间</label>
                                     <label><input type="radio" name="cronPreset" value="weeklyAt"> 每周固定时间</label>
                                     <label><input type="radio" name="cronPreset" value="monthlyAt"> 每月固定时间</label>
+                                     <label><input type="radio" name="cronPreset" value="onceAt"> 指定时间执行</label>
                                 </div>
                             </div>
                             <div class="preset-areas">
+                                    <div data-preset-area="everyNSeconds" class="hidden">
+                                        <label>每 <input type="number" id="presetNSeconds" value="5" min="1" max="59" style="width:80px;"> 秒</label>
+                                    </div>
                                 <div data-preset-area="everyNMinutes">
                                     <label>每 <input type="number" id="presetNMinutes" value="5" min="1" max="59" style="width:80px;"> 分钟</label>
                                 </div>
@@ -397,7 +402,7 @@
                                 </div>
                                 <div data-preset-area="weeklyAt" class="hidden">
                                     <label>每周 
-                                        <select id="presetWeekday">
+                                        <select id="presetWeekday" style="width: 120px;">
                                             <option value="1">周一</option>
                                             <option value="2">周二</option>
                                             <option value="3">周三</option>
@@ -416,6 +421,15 @@
                                         <input type="number" id="presetMinute4" value="0" min="0" max="59" style="width:80px;"> 分
                                     </label>
                                 </div>
+                                 <div data-preset-area="onceAt" class="hidden">
+                                     <label>选择日期时间：
+                                         <input type="datetime-local" id="presetDateTime" step="1" style="width: 240px;">
+                                     </label>
+                                     <div class="option-group" style="margin-top:8px;">
+                                         <label><input type="checkbox" id="presetIncludeYear"> 包含年份 (Quartz 7字段)</label>
+                                     </div>
+                                     <div class="helper-text" style="color: var(--text-secondary); font-size: 12px; margin-top: 6px;">提示：Cron表达式不含年份，生成结果将在每年该日期与时间触发</div>
+                                 </div>
                             </div>
                             <button id="cronGenBtn" class="btn primary">生成表达式</button>
                         </div>
