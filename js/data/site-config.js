@@ -16,7 +16,10 @@ window.SiteConfig = {
       { name: 'Notion AI', url: 'https://www.notion.so/product/ai', desc: '文档与知识库' }
     ],
     对话: [
-      { name: 'Perplexity', url: 'https://www.perplexity.ai', desc: '检索问答' }
+      { name: 'Perplexity', url: 'https://www.perplexity.ai', desc: '检索问答' },
+      { name: '豆包', url: 'https://www.doubao.com', desc: '字节跳动 AI 助手' },
+      { name: '元宝', url: 'https://yuanbao.tencent.com', desc: '腾讯 AI 助手' },
+      { name: 'DeepSeek', url: 'https://chat.deepseek.com', desc: '推理与代码能力强' }
     ],
     音乐: [
       { name: 'Suno', url: 'https://suno.ai', desc: 'AI音乐生成' }

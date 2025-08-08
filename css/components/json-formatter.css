@@ -198,8 +198,8 @@
 /* JSON对比差异样式 */
 .json-diff {
     font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
-    font-size: 14px;
-    line-height: 1.6;
+    font-size: 13px; /* 略微缩小 */
+    line-height: 1.5;
 }
 
 .json-diff-added {
@@ -262,8 +262,8 @@
     background: var(--bg-primary);
     border: 1px solid var(--border-color);
     border-radius: var(--border-radius);
-    padding: 12px;
-    font-size: 0.85rem;
+    padding: 8px; /* 紧凑 */
+    font-size: 0.82rem;
 }
 
 /* 压缩模式下的语法高亮优化 */

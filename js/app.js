@@ -187,6 +187,7 @@ class SSDevToolsApp {
             this.registerTool('json', new JSONTool());
             this.registerTool('xml', new XMLTool());
             this.registerTool('encoding', new EncodingTool());
+            this.registerTool('cron', new CronTool());
             
             // 初始化所有工具
             this.tools.forEach((tool, name) => {
@@ -199,7 +200,8 @@ class SSDevToolsApp {
             });
             
             // 显示默认工具
-            this.showTool('home');
+            // 默认定位到 JSON解析
+            this.showTool('json-parser');
             
         } catch (error) {
             console.error('工具初始化失败:', error);
@@ -212,6 +214,32 @@ class SSDevToolsApp {
         if (!window.SiteConfig) return;
         this.renderSiteCards('aiSitesContainer', window.SiteConfig.aiSites);
         this.renderSiteCards('blogSitesContainer', window.SiteConfig.blogSites);
+
+        // 绑定过滤
+        const aiFilterBtns = document.querySelectorAll('#ai-sites .filter-btn');
+        aiFilterBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                aiFilterBtns.forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                const key = btn.dataset.filter;
+                if (key === 'all') {
+                    this.renderSiteCards('aiSitesContainer', window.SiteConfig.aiSites);
+                } else {
+                    const filtered = {};
+                    if (window.SiteConfig.aiSites[key]) filtered[key] = window.SiteConfig.aiSites[key];
+                    this.renderSiteCards('aiSitesContainer', filtered);
+                }
+            });
+        });
+
+        const blogFilterBtns = document.querySelectorAll('#hot-blogs .filter-btn');
+        blogFilterBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                blogFilterBtns.forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                this.renderSiteCards('blogSitesContainer', window.SiteConfig.blogSites);
+            });
+        });
     }
 
     // 根据配置渲染分组卡片
@@ -219,7 +247,10 @@ class SSDevToolsApp {
         const container = document.getElementById(containerId);
         if (!container || !groups) return;
         container.innerHTML = '';
-        Object.entries(groups).forEach(([groupName, sites]) => {
+
+        // 排序：按热度（若提供）降序，否则保持原序
+        const entries = Object.entries(groups);
+        entries.forEach(([groupName, sites]) => {
             const section = document.createElement('section');
             section.className = 'site-section';
             section.innerHTML = `
@@ -227,16 +258,22 @@ class SSDevToolsApp {
                 <div class="site-card-list"></div>
             `;
             const list = section.querySelector('.site-card-list');
-            sites.forEach(site => {
+            const sorted = [...sites].sort((a, b) => (b.hot || 0) - (a.hot || 0));
+            sorted.forEach(site => {
                 const a = document.createElement('a');
                 a.className = 'site-card';
                 a.href = site.url;
                 a.target = '_blank';
                 a.rel = 'noopener noreferrer';
+                const iconUrl = site.icon || (site.url ? (new URL(site.url).origin + '/favicon.ico') : '');
                 a.innerHTML = `
-                    <div class="site-card-title">${site.name}</div>
-                    <div class="site-card-desc">${site.desc || ''}</div>
-                `;
+                    <div style="display:flex;align-items:center;gap:10px;">
+                        <img src="${iconUrl}" onerror="this.style.display='none'" alt="" width="20" height="20" style="border-radius:4px;">
+                        <div>
+                            <div class="site-card-title">${site.name}</div>
+                            <div class="site-card-desc">${site.desc || ''}</div>
+                        </div>
+                    </div>`;
                 list.appendChild(a);
             });
             container.appendChild(section);
