@@ -33,7 +33,7 @@
                     </h3>
                     <ul class="nav-category-items">
                         <li><a href="#json-parser" data-tool="json-parser">JSON解析</a></li>
-                        <li><a href="#json-convert" data-tool="json-convert">JSON转换</a></li>
+                        
                         <li><a href="#json-compare" data-tool="json-compare">JSON对比</a></li>
                     </ul>
                 </div>
@@ -103,83 +103,46 @@
             <div id="json-parser" class="tool-panel">
                 <div class="tool-header">
                     <h2>JSON解析</h2>
-                    <p>格式化和美化JSON数据</p>
+                    <p>格式化、压缩和美化JSON数据</p>
                 </div>
-                <div class="tool-content split-layout">
-                    <div class="split-left">
-                        <div class="input-section">
-                            <label for="jsonInput">输入JSON数据：</label>
-                            <textarea id="jsonInput" placeholder="请输入JSON数据..." rows="25"></textarea>
-                            <div class="button-group">
-                                <button id="formatJson" class="btn primary">格式化</button>
-                                <button id="compressJson" class="btn secondary">压缩</button>
-                                <button id="clearJson" class="btn secondary">清空</button>
+                <div class="tool-content single-layout">
+                    <div class="json-editor-section">
+                        <!-- 工具栏 -->
+                        <div class="json-toolbar">
+                            <div class="toolbar-controls">
+                                <button id="formatJson" class="btn-small primary">
+                                    <span class="btn-icon">✨</span>格式化
+                                </button>
+                                <button id="compressJson" class="btn-small secondary">
+                                    <span class="btn-icon">📦</span>压缩
+                                </button>
+                                <button id="copyJsonResult" class="btn-small secondary">
+                                    <span class="btn-icon">📋</span>复制
+                                </button>
+                                <button id="clearJson" class="btn-small secondary">
+                                    <span class="btn-icon">🗑️</span>清空
+                                </button>
+                            </div>
+                            <!-- 状态信息 -->
+                            <div class="status-info">
+                                <span id="jsonStatus" class="status-text">准备就绪</span>
+                                <span id="jsonStats" class="stats-text"></span>
                             </div>
                         </div>
-                    </div>
-                    <div class="split-right">
-                        <div class="output-section">
-                            <label>格式化结果：</label>
-                            <div id="jsonOutput" class="collapsible-output" data-placeholder="格式化结果将在这里显示..."></div>
-                            <div class="button-group">
-                                <button id="copyJsonResult" class="btn secondary">复制结果</button>
-                                <button id="syncJsonResult" class="btn secondary">同步到输入</button>
-                            </div>
+                        
+                        <!-- 编辑器和显示区域 -->
+                        <div class="json-editor-container">
+                            <!-- 文本编辑器 -->
+                            <textarea id="jsonInput" class="json-editor" placeholder="请输入JSON数据..." rows="35"></textarea>
+                            
+                            <!-- 格式化显示器 -->
+                            <div id="jsonOutput" class="json-formatted-display collapsible-output" data-placeholder="格式化后将在这里显示可折叠的JSON结构..."></div>
                         </div>
                     </div>
                 </div>
             </div>
 
-            <!-- JSON转换工具 -->
-            <div id="json-convert" class="tool-panel">
-                <div class="tool-header">
-                    <h2>JSON转换</h2>
-                    <p>JSON与JavaBean相互转换</p>
-                </div>
-                <div class="tool-content">
-                    <div class="convert-tabs">
-                        <button class="tab-btn active" data-tab="json-to-java">JSON → JavaBean</button>
-                        <button class="tab-btn" data-tab="java-to-json">JavaBean → JSON</button>
-                    </div>
-                    <div id="json-to-java" class="tab-content active">
-                        <div class="input-section">
-                            <label for="jsonToJavaInput">输入JSON数据：</label>
-                            <textarea id="jsonToJavaInput" placeholder="请输入JSON数据..." rows="15"></textarea>
-                            <div class="options">
-                                <label><input type="text" id="className" placeholder="类名 (默认: MyClass)"></label>
-                                <div class="style-options">
-                                    <label class="radio-label">
-                                        <input type="radio" name="javaStyle" value="getter-setter" checked>
-                                        <span>传统 getter/setter</span>
-                                    </label>
-                                    <label class="radio-label">
-                                        <input type="radio" name="javaStyle" value="lombok">
-                                        <span>使用 Lombok</span>
-                                    </label>
-                                </div>
-                            </div>
-                            <button id="convertToJava" class="btn primary">转换为JavaBean</button>
-                        </div>
-                        <div class="output-section">
-                            <label>JavaBean代码：</label>
-                            <pre id="javaOutput" class="code-output"></pre>
-                            <button id="copyJavaResult" class="btn secondary">复制代码</button>
-                        </div>
-                    </div>
-                    <div id="java-to-json" class="tab-content">
-                        <div class="input-section">
-                            <label for="javaToJsonInput">输入JavaBean代码：</label>
-                            <textarea id="javaToJsonInput" placeholder="请输入JavaBean代码..." rows="15"></textarea>
-                            <button id="convertToJson" class="btn primary">转换为JSON</button>
-                        </div>
-                        <div class="output-section">
-                            <label>JSON数据：</label>
-                            <div id="jsonFromJavaOutput" class="json-output"></div>
-                            <button id="copyJsonFromJavaResult" class="btn secondary">复制结果</button>
-                        </div>
-                    </div>
-                </div>
-            </div>
+            
 
             <!-- JSON对比工具 -->
             <div id="json-compare" class="tool-panel">

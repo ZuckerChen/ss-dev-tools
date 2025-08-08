@@ -1071,6 +1071,8 @@ input[type="datetime-local"] {
     white-space: pre-wrap;
     tab-size: 2;
     position: relative;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
 }
 
 .collapsible-output:empty::before {
@@ -1094,6 +1096,8 @@ input[type="datetime-local"] {
 .collapsible-node {
     margin: 0;
     padding: 0;
+    display: block;
+    width: 100%;
 }
 
 .collapsible-line {
@@ -1101,6 +1105,10 @@ input[type="datetime-local"] {
     line-height: 1.5;
     margin: 0;
     cursor: default;
+    display: block;
+    width: 100%;
+    box-sizing: border-box;
+    overflow: visible;
 }
 
 /* 折叠/展开按钮 */
@@ -1142,7 +1150,10 @@ input[type="datetime-local"] {
 .collapsible-content {
     margin-left: 16px;
     transition: all 0.2s ease;
-    overflow: hidden;
+    overflow: visible;
+    display: block;
+    width: calc(100% - 16px);
+    box-sizing: border-box;
 }
 
 .collapsible-content.collapsed {
@@ -1182,8 +1193,31 @@ input[type="datetime-local"] {
     color: #09885a;
 }
 
+.json-bigint {
+    color: #d73a49;
+    font-weight: 600;
+    position: relative;
+}
+
+.json-bigint::after {
+    content: "L";
+    font-size: 0.75em;
+    color: #6f42c1;
+    vertical-align: super;
+    margin-left: 2px;
+}
+
 [data-theme="dark"] .json-number {
     color: #b5cea8;
+}
+
+[data-theme="dark"] .json-bigint {
+    color: #ff7b72;
+    font-weight: 600;
+}
+
+[data-theme="dark"] .json-bigint::after {
+    color: #d2a8ff;
 }
 
 .json-boolean {
@@ -1255,8 +1289,177 @@ input[type="datetime-local"] {
     opacity: 0.3;
 }
 
+/* JSON编辑器单布局样式 */
+.single-layout {
+    display: block;
+    width: 100%;
+}
+
+.json-editor-section {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+/* JSON工具栏 */
+.json-toolbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 12px;
+    background: var(--bg-secondary);
+    border-radius: var(--border-radius);
+    border: 1px solid var(--border-color);
+    gap: 16px;
+    flex-wrap: wrap;
+}
+
+.toolbar-controls {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+
+
+/* 小号按钮 */
+.btn-small {
+    padding: 6px 12px;
+    font-size: 0.85rem;
+    border-radius: 4px;
+    border: none;
+    cursor: pointer;
+    transition: var(--transition);
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    white-space: nowrap;
+}
+
+.btn-small.primary {
+    background: var(--primary-color);
+    color: white;
+}
+
+.btn-small.primary:hover {
+    background: var(--primary-hover);
+}
+
+.btn-small.secondary {
+    background: var(--bg-tertiary);
+    color: var(--text-primary);
+    border: 1px solid var(--border-color);
+}
+
+.btn-small.secondary:hover {
+    background: var(--border-color);
+}
+
+.btn-icon {
+    font-size: 0.8em;
+}
+
+/* JSON编辑器容器 */
+.json-editor-container {
+    position: relative;
+    width: 100%;
+    min-height: 600px;
+}
+
+/* JSON文本编辑器 */
+.json-editor {
+    width: 100%;
+    min-height: 600px;
+    font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+    font-size: 14px;
+    line-height: 1.5;
+    padding: 16px;
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius);
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    resize: vertical;
+    outline: none;
+    transition: var(--transition);
+    box-sizing: border-box;
+}
+
+.json-editor:focus {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+}
+
+/* JSON格式化显示器 */
+.json-formatted-display {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    min-height: 600px;
+    font-size: 14px;
+    line-height: 1.5;
+    background: var(--bg-primary);
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius);
+    padding: 16px;
+    overflow-y: auto;
+    display: none;
+    box-sizing: border-box;
+}
+
+.json-formatted-display.active {
+    display: block;
+}
+
+/* 状态信息 */
+.status-info {
+    display: flex;
+    gap: 16px;
+    align-items: center;
+    font-size: 0.85rem;
+}
+
+.status-text {
+    color: var(--text-primary);
+    font-weight: 500;
+}
+
+.stats-text {
+    color: var(--text-secondary);
+    font-size: 0.8rem;
+}
+
+/* 状态文本样式 */
+.status-text.success {
+    color: var(--success-color);
+}
+
+.status-text.error {
+    color: var(--error-color);
+}
+
+.status-text.warning {
+    color: var(--warning-color);
+}
+
+.status-text.info {
+    color: var(--text-secondary);
+}
+
 /* 响应式调整 */
 @media (max-width: 768px) {
+    .editor-header {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    
+    .editor-controls {
+        justify-content: center;
+    }
+    
     .collapsible-output {
         font-size: 12px;
         padding: 12px;

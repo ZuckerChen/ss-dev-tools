@@ -11,8 +11,10 @@ class JSONTool extends BaseTool {
 
     init() {
         this.initJSONParser();
-        this.initJSONConverter();
+        // 已移除JSON转换功能
         this.initJSONComparator();
+        this.currentMode = 'text'; // 当前模式：text 或 formatted
+        this.originalJSON = null; // 保存原始JSON对象
     }
 
     // 初始化JSON解析工具
@@ -30,34 +32,20 @@ class JSONTool extends BaseTool {
         });
         
         document.getElementById('copyJsonResult')?.addEventListener('click', () => {
-            this.copyJSONResult();
+            this.copyCurrentContent();
         });
         
-        document.getElementById('syncJsonResult')?.addEventListener('click', () => {
-            this.syncJSONResult();
+        // 监听输入框变化，重置缓存的原始数据
+        document.getElementById('jsonInput')?.addEventListener('input', () => {
+            this.originalJSON = null;
+            if (this.currentMode === 'formatted') {
+                this.switchToTextMode();
+            }
         });
     }
 
-    // 初始化JSON转换工具
-    initJSONConverter() {
-        document.getElementById('convertToJava')?.addEventListener('click', () => {
-            this.convertJSONToJava();
-        });
-        
-        document.getElementById('convertToJson')?.addEventListener('click', () => {
-            this.convertJavaToJSON();
-        });
-        
-        document.getElementById('copyJavaResult')?.addEventListener('click', () => {
-            const content = document.getElementById('javaOutput').textContent;
-            this.copyToClipboard(content);
-        });
-        
-        document.getElementById('copyJsonFromJavaResult')?.addEventListener('click', () => {
-            const content = document.getElementById('jsonFromJavaOutput').textContent;
-            this.copyToClipboard(content);
-        });
-    }
+    // JSON转换功能已下线
+    initJSONConverter() {}
 
     // 初始化JSON对比工具
     initJSONComparator() {
@@ -74,365 +62,222 @@ class JSONTool extends BaseTool {
 
     // 格式化JSON
     formatJSON() {
-        const input = document.getElementById('jsonInput').value.trim();
-        const output = document.getElementById('jsonOutput');
+        const inputElement = document.getElementById('jsonInput');
+        const outputElement = document.getElementById('jsonOutput');
+        
+        if (this.currentMode === 'formatted') {
+            // 如果当前是格式化模式，切换回文本模式
+            this.switchToTextMode();
+            return;
+        }
+        
+        const input = inputElement.value.trim();
         
         if (!input) {
-            this.formatter.showPlaceholder('jsonOutput', '请输入JSON数据');
-            this.lastFormattedText = '';
+            this.updateStatus('请输入JSON数据', 'warning');
             return;
         }
         
         try {
-            const parsed = JSON.parse(input);
+            // 只在第一次格式化时解析，避免重复转换导致BigInt变为字符串
+            let parsed;
+            if (this.originalJSON === null) {
+                parsed = this.parseJSONWithBigInt(input);
+                this.originalJSON = parsed; // 保存原始解析结果
+            } else {
+                parsed = this.originalJSON; // 使用保存的原始数据
+            }
             
             // 生成格式化的文本并保存
-            const formatted = JSON.stringify(parsed, null, 2);
+            const formatted = this.stringifyJSONWithBigInt(parsed, null, 2);
             this.lastFormattedText = formatted;
             
-            // 使用可折叠格式化器
+            // 更新输入框内容为格式化后的文本
+            inputElement.value = formatted;
+            
+            // 切换到格式化显示模式
+            this.switchToFormattedMode();
+            
+            // 使用可折叠格式化器显示
             this.formatter.formatJSON(parsed, 'jsonOutput');
             
-            // 添加展开/折叠控制按钮
-            this.addCollapseControls('jsonOutput');
+            // 更新状态和统计
+            this.updateStatus('格式化完成', 'success');
+            this.updateStats(input, formatted, 'format');
             
-            // 显示格式化统计信息
-            this.showStats(input, formatted, output, 'format');
         } catch (error) {
-            this.formatter.showError('jsonOutput', `JSON格式错误: ${error.message}`);
+            this.updateStatus(`JSON格式错误: ${error.message}`, 'error');
             this.lastFormattedText = '';
+            this.originalJSON = null;
         }
     }
 
     // 压缩JSON
     compressJSON() {
-        const input = document.getElementById('jsonInput').value.trim();
-        const output = document.getElementById('jsonOutput');
+        const inputElement = document.getElementById('jsonInput');
+        const input = inputElement.value.trim();
         
         if (!input) {
-            this.formatter.showPlaceholder('jsonOutput', '请输入JSON数据');
-            this.lastFormattedText = '';
+            this.updateStatus('请输入JSON数据', 'warning');
             return;
         }
         
         try {
-            const parsed = JSON.parse(input);
-            const compressed = JSON.stringify(parsed).replace(/\s+/g, '');
+            // 使用原始JSON数据或重新解析
+            let parsed;
+            if (this.originalJSON !== null) {
+                parsed = this.originalJSON;
+            } else {
+                parsed = this.parseJSONWithBigInt(input);
+                this.originalJSON = parsed;
+            }
+            
+            const compressed = this.stringifyJSONWithBigInt(parsed);
             
             // 保存压缩后的文本
             this.lastFormattedText = compressed;
             
-            // 压缩后显示纯文本
-            output.innerHTML = `<div style="font-family: monospace; white-space: pre-wrap; word-break: break-all;">${this.escapeHtml(compressed)}</div>`;
-            output.className = 'collapsible-output';
+            // 更新输入框内容为压缩后的文本
+            inputElement.value = compressed;
             
-            // 显示压缩统计信息
-            this.showStats(input, compressed, output, 'compression');
+            // 切换到文本模式
+            this.switchToTextMode();
+            
+            // 更新状态和统计
+            this.updateStatus('压缩完成', 'success');
+            this.updateStats(input, compressed, 'compression');
+            
         } catch (error) {
-            this.formatter.showError('jsonOutput', `JSON格式错误: ${error.message}`);
+            this.updateStatus(`JSON格式错误: ${error.message}`, 'error');
             this.lastFormattedText = '';
+            this.originalJSON = null;
         }
     }
 
     // 清空JSON
     clearJSON() {
         document.getElementById('jsonInput').value = '';
-        const output = document.getElementById('jsonOutput');
         
-        // 清空保存的文本
+        // 清空保存的数据
         this.lastFormattedText = '';
+        this.originalJSON = null;
         
-        // 显示占位符
-        this.formatter.showPlaceholder('jsonOutput', '格式化结果将在这里显示...');
+        // 清空格式化显示
+        this.formatter.showPlaceholder('jsonOutput', '格式化后将在这里显示可折叠的JSON结构...');
         
-        // 移除统计信息
-        const existingStats = output.parentNode.querySelector('.stats-container');
-        if (existingStats) {
-            existingStats.remove();
-        }
+        // 切换到文本模式
+        this.switchToTextMode();
         
-        // 移除控制按钮
-        this.removeCollapseControls('jsonOutput');
+        // 更新状态
+        this.updateStatus('已清空', 'info');
+        this.updateStats('', '', 'clear');
     }
 
-    // 复制JSON结果
-    copyJSONResult() {
-        // 优先使用保存的格式化文本，确保缩进正确
-        let content = this.lastFormattedText;
-        
-        // 如果没有保存的文本，尝试从HTML中提取
-        if (!content) {
-            content = this.formatter.getPlainText('jsonOutput') || 
-                     document.getElementById('jsonOutput').textContent ||
-                     document.getElementById('jsonOutput').innerText;
-        }
-        
-        this.copyToClipboard(content);
-    }
-
-    // 同步JSON结果到输入框
-    syncJSONResult() {
-        const input = document.getElementById('jsonInput');
-        
-        // 优先使用保存的格式化文本，确保缩进正确
-        let content = this.lastFormattedText;
-        
-        // 如果没有保存的文本，尝试从HTML中提取
-        if (!content) {
-            content = this.formatter.getPlainText('jsonOutput') || 
-                     document.getElementById('jsonOutput').textContent ||
-                     document.getElementById('jsonOutput').innerText;
-        }
-        
-        if (content && content.trim()) {
-            try {
-                JSON.parse(content);
-                input.value = content;
-                this.showToast('已同步到输入框！', 'success');
-            } catch (error) {
-                this.showToast('输出内容不是有效的JSON格式', 'error');
-            }
+    // 复制当前内容
+    copyCurrentContent() {
+        const input = document.getElementById('jsonInput').value;
+        if (input.trim()) {
+            this.copyToClipboard(input);
+            this.updateStatus('已复制到剪贴板', 'success');
         } else {
-            this.showToast('输出区域为空', 'error');
+            this.updateStatus('没有内容可复制', 'warning');
         }
     }
 
-    // JSON转JavaBean
-    convertJSONToJava() {
-        const input = document.getElementById('jsonToJavaInput').value.trim();
-        const output = document.getElementById('javaOutput');
-        const className = document.getElementById('className').value.trim() || 'MyClass';
-        const style = document.querySelector('input[name="javaStyle"]:checked').value;
+
+
+    // 切换到文本模式
+    switchToTextMode() {
+        this.currentMode = 'text';
+        const inputElement = document.getElementById('jsonInput');
+        const outputElement = document.getElementById('jsonOutput');
         
-        if (!input) {
-            output.textContent = '请输入JSON数据';
+        // 显示文本编辑器，隐藏格式化显示器
+        inputElement.style.display = 'block';
+        outputElement.classList.remove('active');
+    }
+
+    // 切换到格式化模式
+    switchToFormattedMode() {
+        this.currentMode = 'formatted';
+        const inputElement = document.getElementById('jsonInput');
+        const outputElement = document.getElementById('jsonOutput');
+        
+        // 隐藏文本编辑器，显示格式化显示器
+        inputElement.style.display = 'none';
+        outputElement.classList.add('active');
+    }
+
+    // 更新状态显示
+    updateStatus(message, type = 'info') {
+        const statusElement = document.getElementById('jsonStatus');
+        if (statusElement) {
+            statusElement.textContent = message;
+            statusElement.className = `status-text ${type}`;
+        }
+    }
+
+    // 更新统计信息
+    updateStats(originalData, processedData, type) {
+        const statsElement = document.getElementById('jsonStats');
+        if (!statsElement) return;
+
+        if (type === 'clear') {
+            statsElement.textContent = '';
             return;
         }
-        
-        try {
-            const parsed = JSON.parse(input);
-            const javaCode = this.generateJavaClass(parsed, className, style);
-            output.textContent = javaCode;
-        } catch (error) {
-            output.textContent = `JSON格式错误: ${error.message}`;
+
+        const originalSize = new Blob([originalData]).size;
+        const processedSize = new Blob([processedData]).size;
+
+        if (type === 'compression') {
+            const savings = originalSize - processedSize;
+            const savingsPercent = originalSize > 0 ? ((savings / originalSize) * 100).toFixed(1) : 0;
+            statsElement.textContent = `原始: ${this.formatFileSize(originalSize)} | 压缩后: ${this.formatFileSize(processedSize)} | 节省: ${savingsPercent}%`;
+        } else if (type === 'format') {
+            const increase = processedSize - originalSize;
+            const increasePercent = originalSize > 0 ? ((increase / originalSize) * 100).toFixed(1) : 0;
+            statsElement.textContent = `原始: ${this.formatFileSize(originalSize)} | 格式化后: ${this.formatFileSize(processedSize)} | 增加: ${increasePercent}%`;
         }
     }
 
-    // 生成Java类代码
-    generateJavaClass(obj, className, style = 'getter-setter') {
-        const imports = this.getImports(obj, style);
-        const fields = this.generateFields(obj);
-        const methods = style === 'lombok' ? this.generateLombokMethods() : this.generateTraditionalMethods(obj, className);
-        
-        return `${imports}
+    // JSON转换相关功能已移除
 
-${style === 'lombok' ? this.generateLombokAnnotations() : ''}/**
- * ${className}类
- * 自动生成的JavaBean类
- */
-public class ${className} {
-${fields}
-${methods}
-}`;
-    }
+    generateJavaClass() { return ''; }
 
-    // 获取导入语句
-    getImports(obj, style) {
-        const imports = new Set();
-        
-        if (style === 'lombok') {
-            imports.add('import lombok.Data;');
-            imports.add('import lombok.NoArgsConstructor;');
-            imports.add('import lombok.AllArgsConstructor;');
-        }
-        
-        if (this.needsDateImports(obj)) {
-            imports.add('import java.util.Date;');
-        }
-        
-        if (this.needsListImports(obj)) {
-            imports.add('import java.util.List;');
-        }
-        
-        return Array.from(imports).join('\n');
-    }
+    getImports() { return ''; }
 
-    // 生成字段
-    generateFields(obj) {
-        return Object.entries(obj).map(([key, value]) => {
-            const javaType = this.getJavaType(value);
-            const fieldName = this.toCamelCase(key);
-            return `    /** ${key} */\n    private ${javaType} ${fieldName};`;
-        }).join('\n\n');
-    }
+    generateFields() { return ''; }
 
-    // 生成Lombok注解
-    generateLombokAnnotations() {
-        return `@Data
-@NoArgsConstructor
-@AllArgsConstructor
-`;
-    }
+    generateLombokAnnotations() { return ''; }
 
-    // 生成Lombok方法（构造函数等）
-    generateLombokMethods() {
-        return `    // 使用Lombok自动生成getter、setter、equals、hashCode、toString方法`;
-    }
+    generateLombokMethods() { return ''; }
 
-    // 生成传统方法
-    generateTraditionalMethods(obj, className) {
-        const getters = this.generateGetters(obj);
-        const setters = this.generateSetters(obj);
-        const constructor = this.generateConstructor(obj, className);
-        
-        return `${constructor}
+    generateTraditionalMethods() { return ''; }
 
-${getters}
+    generateGetters() { return ''; }
 
-${setters}`;
-    }
+    generateSetters() { return ''; }
 
-    // 生成getter方法
-    generateGetters(obj) {
-        return Object.entries(obj).map(([key, value]) => {
-            const javaType = this.getJavaType(value);
-            const fieldName = this.toCamelCase(key);
-            const methodName = `get${this.capitalize(fieldName)}`;
-            
-            return `    /**
-     * 获取${key}
-     * @return ${key}
-     */
-    public ${javaType} ${methodName}() {
-        return ${fieldName};
-    }`;
-        }).join('\n\n');
-    }
+    generateConstructor() { return ''; }
 
-    // 生成setter方法
-    generateSetters(obj) {
-        return Object.entries(obj).map(([key, value]) => {
-            const javaType = this.getJavaType(value);
-            const fieldName = this.toCamelCase(key);
-            const methodName = `set${this.capitalize(fieldName)}`;
-            
-            return `    /**
-     * 设置${key}
-     * @param ${fieldName} ${key}
-     */
-    public void ${methodName}(${javaType} ${fieldName}) {
-        this.${fieldName} = ${fieldName};
-    }`;
-        }).join('\n\n');
-    }
+    getJavaType() { return 'Object'; }
 
-    // 生成构造函数
-    generateConstructor(obj, className) {
-        return `    /**
-     * 无参构造函数
-     */
-    public ${className}() {
-    }`;
-    }
+    isDateString() { return false; }
 
-    // 获取Java类型
-    getJavaType(value) {
-        if (value === null) return 'Object';
-        if (typeof value === 'string') {
-            if (this.isDateString(value)) return 'Date';
-            return 'String';
-        }
-        if (typeof value === 'number') {
-            return Number.isInteger(value) ? 'Integer' : 'Double';
-        }
-        if (typeof value === 'boolean') return 'Boolean';
-        if (Array.isArray(value)) {
-            if (value.length > 0) {
-                const elementType = this.getJavaType(value[0]);
-                return `List<${elementType}>`;
-            }
-            return 'List<Object>';
-        }
-        if (typeof value === 'object') return 'Object';
-        return 'Object';
-    }
+    needsDateImports() { return false; }
 
-    // 判断是否为日期字符串
-    isDateString(value) {
-        if (typeof value !== 'string') return false;
-        const date = new Date(value);
-        return !isNaN(date.getTime()) && (
-            /^\d{4}-\d{2}-\d{2}/.test(value) ||
-            /^\d{4}\/\d{2}\/\d{2}/.test(value) ||
-            /T\d{2}:\d{2}:\d{2}/.test(value)
-        );
-    }
+    needsListImports() { return false; }
 
-    // 检查是否需要Date导入
-    needsDateImports(obj) {
-        return Object.values(obj).some(value => 
-            typeof value === 'string' && this.isDateString(value)
-        );
-    }
+    toCamelCase(str) { return str; }
 
-    // 检查是否需要List导入
-    needsListImports(obj) {
-        return Object.values(obj).some(value => Array.isArray(value));
-    }
+    capitalize(str) { return str; }
 
-    // 转换为驼峰命名
-    toCamelCase(str) {
-        return str.replace(/[_-](.)/g, (_, char) => char.toUpperCase());
-    }
+    convertJavaToJSON() {}
 
-    // 首字母大写
-    capitalize(str) {
-        return str.charAt(0).toUpperCase() + str.slice(1);
-    }
+    parseJavaToJSON() { return {}; }
 
-    // JavaBean转JSON
-    convertJavaToJSON() {
-        const input = document.getElementById('javaToJsonInput').value.trim();
-        const output = document.getElementById('jsonFromJavaOutput');
-        
-        if (!input) {
-            output.textContent = '请输入JavaBean代码';
-            return;
-        }
-        
-        try {
-            const jsonData = this.parseJavaToJSON(input);
-            const formatted = JSON.stringify(jsonData, null, 2);
-            output.textContent = formatted;
-        } catch (error) {
-            output.textContent = `解析错误: ${error.message}`;
-        }
-    }
-
-    // 解析Java代码为JSON
-    parseJavaToJSON(javaCode) {
-        const fieldRegex = /private\s+(\w+(?:<[^>]+>)?)\s+(\w+);/g;
-        const result = {};
-        let match;
-        
-        while ((match = fieldRegex.exec(javaCode)) !== null) {
-            const [, type, fieldName] = match;
-            result[fieldName] = this.getDefaultValueForType(type);
-        }
-        
-        return result;
-    }
-
-    // 根据类型获取默认值
-    getDefaultValueForType(type) {
-        if (type.includes('String')) return '';
-        if (type.includes('Integer') || type.includes('int')) return 0;
-        if (type.includes('Double') || type.includes('double')) return 0.0;
-        if (type.includes('Boolean') || type.includes('boolean')) return false;
-        if (type.includes('List')) return [];
-        if (type.includes('Date')) return new Date().toISOString();
-        return null;
-    }
+    getDefaultValueForType() { return null; }
 
     // JSON对比
     compareJSON() {
@@ -446,8 +291,8 @@ ${setters}`;
         }
         
         try {
-            const leftObj = JSON.parse(leftInput);
-            const rightObj = JSON.parse(rightInput);
+            const leftObj = this.parseJSONWithBigInt(leftInput);
+            const rightObj = this.parseJSONWithBigInt(rightInput);
             
             const differences = this.compareObjects(leftObj, rightObj);
             output.innerHTML = this.formatDifferences(differences);
@@ -463,23 +308,153 @@ ${setters}`;
         
         for (const key of allKeys) {
             const currentPath = path ? `${path}.${key}` : key;
-            const val1 = obj1[key];
-            const val2 = obj2[key];
+            const val1 = this.normalizeForCompare(obj1[key]);
+            const val2 = this.normalizeForCompare(obj2[key]);
             
             if (!(key in obj1)) {
                 differences.push({ type: 'added', path: currentPath, value: val2 });
             } else if (!(key in obj2)) {
                 differences.push({ type: 'deleted', path: currentPath, value: val1 });
-            } else if (JSON.stringify(val1) !== JSON.stringify(val2)) {
-                if (typeof val1 === 'object' && typeof val2 === 'object' && !Array.isArray(val1) && !Array.isArray(val2)) {
-                    differences.push(...this.compareObjects(val1, val2, currentPath));
-                } else {
-                    differences.push({ type: 'changed', path: currentPath, oldValue: val1, newValue: val2 });
+            } else if (!this.deepEqual(val1, val2)) {
+                if (val1 !== null && val2 !== null) {
+                    // 嵌套对象
+                    if (typeof val1 === 'object' && typeof val2 === 'object' && !Array.isArray(val1) && !Array.isArray(val2)) {
+                        differences.push(...this.compareObjects(val1, val2, currentPath));
+                        continue;
+                    }
+                    // 数组
+                    if (Array.isArray(val1) && Array.isArray(val2)) {
+                        differences.push(...this.compareArrays(val1, val2, currentPath));
+                        continue;
+                    }
                 }
+                differences.push({ type: 'changed', path: currentPath, oldValue: val1, newValue: val2 });
             }
         }
         
         return differences;
+    }
+
+    // 对比数组
+    compareArrays(arr1, arr2, path = '') {
+        const diffs = [];
+        const maxLen = Math.max(arr1.length, arr2.length);
+        for (let i = 0; i < maxLen; i++) {
+            const currentPath = `${path}[${i}]`;
+            const v1 = i < arr1.length ? this.normalizeForCompare(arr1[i]) : undefined;
+            const v2 = i < arr2.length ? this.normalizeForCompare(arr2[i]) : undefined;
+            if (i >= arr1.length) {
+                diffs.push({ type: 'added', path: currentPath, value: v2 });
+            } else if (i >= arr2.length) {
+                diffs.push({ type: 'deleted', path: currentPath, value: v1 });
+            } else if (!this.deepEqual(v1, v2)) {
+                if (v1 !== null && v2 !== null) {
+                    if (Array.isArray(v1) && Array.isArray(v2)) {
+                        diffs.push(...this.compareArrays(v1, v2, currentPath));
+                        continue;
+                    }
+                    if (typeof v1 === 'object' && typeof v2 === 'object') {
+                        diffs.push(...this.compareObjects(v1, v2, currentPath));
+                        continue;
+                    }
+                }
+                diffs.push({ type: 'changed', path: currentPath, oldValue: v1, newValue: v2 });
+            }
+        }
+        return diffs;
+    }
+
+    // 规范化用于比较的值：尝试解析字符串里的JSON，并保持BigInt
+    normalizeForCompare(value) {
+        if (typeof value === 'string') {
+            const trimmed = value.trim();
+            if ((trimmed.startsWith('{') && trimmed.endsWith('}')) || (trimmed.startsWith('[') && trimmed.endsWith(']'))) {
+                try {
+                    return this.parseJSONWithBigInt(trimmed);
+                } catch (_) { /* 保持原始字符串 */ }
+            }
+        }
+        return value;
+    }
+
+    /**
+     * 深度比较两个值，支持BigInt
+     * @param {*} a - 第一个值
+     * @param {*} b - 第二个值
+     * @returns {boolean} 是否相等
+     */
+    deepEqual(a, b) {
+        if (a === b) return true;
+        
+        // 处理BigInt/long 的宽松等值（与数字或数字字符串比较）
+        if (typeof a === 'bigint' || typeof b === 'bigint') {
+            const toBigIntOrNull = (v) => {
+                if (typeof v === 'bigint') return v;
+                if (typeof v === 'number' && Number.isInteger(v)) {
+                    try { return BigInt(v); } catch { return null; }
+                }
+                if (typeof v === 'string' && /^-?\d+$/.test(v)) {
+                    try { return BigInt(v); } catch { return null; }
+                }
+                return null;
+            };
+            const ba = toBigIntOrNull(a);
+            const bb = toBigIntOrNull(b);
+            if (ba !== null && bb !== null) {
+                return ba === bb;
+            }
+            return false;
+        }
+        
+        // 处理null和undefined
+        if (a == null || b == null) {
+            return a === b;
+        }
+        
+        // 处理数组
+        if (Array.isArray(a) && Array.isArray(b)) {
+            if (a.length !== b.length) return false;
+            for (let i = 0; i < a.length; i++) {
+                if (!this.deepEqual(a[i], b[i])) return false;
+            }
+            return true;
+        }
+        
+        // 处理对象
+        if (typeof a === 'object' && typeof b === 'object') {
+            const keysA = Object.keys(a);
+            const keysB = Object.keys(b);
+            
+            if (keysA.length !== keysB.length) return false;
+            
+            for (let key of keysA) {
+                if (!keysB.includes(key)) return false;
+                if (!this.deepEqual(a[key], b[key])) return false;
+            }
+            return true;
+        }
+        
+        return false;
+    }
+
+    /**
+     * 字符串化值，支持BigInt
+     * @param {*} value - 要字符串化的值
+     * @returns {string} 字符串表示
+     */
+    stringifyValue(value) {
+        const type = typeof value;
+        if (type === 'bigint') return value.toString();
+        if (value === null) return 'null';
+        if (type === 'string') return JSON.stringify(value);
+        if (type === 'number' || type === 'boolean') return JSON.stringify(value);
+        // 对象或数组，使用支持 BigInt 的 stringify
+        try {
+            return this.stringifyJSONWithBigInt(value, null, 0);
+        } catch (e) {
+            // 兜底：转成字符串
+            try { return String(value); } catch { return '[Unserializable]'; }
+        }
     }
 
     // 格式化差异结果
@@ -493,11 +468,11 @@ ${setters}`;
             ${differences.map(diff => {
                 switch (diff.type) {
                     case 'added':
-                        return `<div class="diff-item added">+ 新增: ${diff.path} = ${JSON.stringify(diff.value)}</div>`;
+                        return `<div class="diff-item added">+ 新增: ${diff.path} = ${this.stringifyValue(diff.value)}</div>`;
                     case 'deleted':
-                        return `<div class="diff-item deleted">- 删除: ${diff.path} = ${JSON.stringify(diff.value)}</div>`;
+                        return `<div class="diff-item deleted">- 删除: ${diff.path} = ${this.stringifyValue(diff.value)}</div>`;
                     case 'changed':
-                        return `<div class="diff-item changed">~ 修改: ${diff.path}<br>  旧值: ${JSON.stringify(diff.oldValue)}<br>  新值: ${JSON.stringify(diff.newValue)}</div>`;
+                        return `<div class="diff-item changed">~ 修改: ${diff.path}<br>  旧值: ${this.stringifyValue(diff.oldValue)}<br>  新值: ${this.stringifyValue(diff.newValue)}</div>`;
                     default:
                         return '';
                 }
@@ -505,53 +480,117 @@ ${setters}`;
         </div>`;
     }
 
-    // 添加展开/折叠控制按钮
-    addCollapseControls(containerId) {
-        const container = document.getElementById(containerId);
-        if (!container) return;
 
-        // 检查是否已存在控制按钮
-        const existingControls = container.parentNode.querySelector('.collapse-controls');
-        if (existingControls) return;
-
-        // 创建控制按钮容器
-        const controlsDiv = document.createElement('div');
-        controlsDiv.className = 'collapse-controls';
-
-        // 展开所有按钮
-        const expandAllBtn = document.createElement('button');
-        expandAllBtn.textContent = '展开所有';
-        expandAllBtn.className = 'btn secondary';
-        expandAllBtn.onclick = () => this.formatter.expandAll(containerId);
-
-        // 折叠所有按钮
-        const collapseAllBtn = document.createElement('button');
-        collapseAllBtn.textContent = '折叠所有';
-        collapseAllBtn.className = 'btn secondary';
-        collapseAllBtn.onclick = () => this.formatter.collapseAll(containerId);
-
-        controlsDiv.appendChild(expandAllBtn);
-        controlsDiv.appendChild(collapseAllBtn);
-
-        // 插入到输出容器前面
-        container.parentNode.insertBefore(controlsDiv, container);
-    }
-
-    // 移除展开/折叠控制按钮
-    removeCollapseControls(containerId) {
-        const container = document.getElementById(containerId);
-        if (!container) return;
-
-        const existingControls = container.parentNode.querySelector('.collapse-controls');
-        if (existingControls) {
-            existingControls.remove();
-        }
-    }
 
     // HTML转义
     escapeHtml(text) {
         const div = document.createElement('div');
         div.textContent = text;
         return div.innerHTML;
+    }
+
+    /**
+     * 支持BigInt的JSON解析器，防止大整数精度丢失
+     * @param {string} text - JSON字符串
+     * @returns {*} 解析后的对象，大整数使用BigInt表示
+     */
+    parseJSONWithBigInt(text) {
+        // 简化方法：使用reviver直接检测和转换大整数
+        // 不进行预处理，避免破坏JSON结构
+        return JSON.parse(text, (key, value) => {
+            // 检查是否为数字类型且可能丢失精度
+            if (typeof value === 'number' && Number.isInteger(value)) {
+                // 检查是否超出安全整数范围
+                if (!Number.isSafeInteger(value)) {
+                    console.warn(`检测到精度丢失的数字: ${value}, 已尝试转换为BigInt`);
+                    // 尝试从字符串重新获取精确值（但这可能已经丢失精度）
+                    const valueStr = value.toString();
+                    try {
+                        return BigInt(Math.round(value));
+                    } catch (e) {
+                        return value;
+                    }
+                }
+                
+                // 对于15位以上的整数，也建议转换为BigInt（预防性措施）
+                const valueStr = value.toString();
+                if (valueStr.length >= 15 && Number.isInteger(value)) {
+                    try {
+                        return BigInt(value);
+                    } catch (e) {
+                        return value;
+                    }
+                }
+            }
+            
+            // 检查字符串是否为纯数字且为大整数格式
+            // 但要排除明显的ID、编号等字符串字段
+            if (typeof value === 'string' && /^-?\d{16,}$/.test(value)) {
+                // 检查字段名，如果是常见的ID字段名，不转换为BigInt
+                const idFieldPatterns = [
+                    'id', 'no', 'code', 'num', 'seq', 'bat', 'order', 
+                    'trade', 'merchant', 'biz', 'out', 'orig', 'credit',
+                    'freeze', 'asset', 'detail', 'account', 'journal'
+                ];
+                
+                // 如果key包含这些模式，可能是ID字段，不转换
+                const isLikelyId = key && idFieldPatterns.some(pattern => 
+                    key.toLowerCase().includes(pattern.toLowerCase())
+                );
+                
+                if (!isLikelyId) {
+                    try {
+                        const num = BigInt(value);
+                        // 只有当这个数字确实超出安全范围且不像ID时才转换
+                        if (value.length >= 16 || !Number.isSafeInteger(Number(value))) {
+                            return num;
+                        }
+                    } catch (e) {
+                        // 转换失败，保持原字符串
+                    }
+                }
+            }
+            
+            return value;
+        });
+    }
+
+
+
+    /**
+     * 支持BigInt的JSON字符串化，正确输出大整数
+     * @param {*} value - 要字符串化的值
+     * @param {function|array} replacer - replacer函数或数组
+     * @param {string|number} space - 缩进空格
+     * @returns {string} JSON字符串
+     */
+    stringifyJSONWithBigInt(value, replacer = null, space = 0) {
+        return JSON.stringify(value, (key, val) => {
+            // 处理BigInt类型
+            if (typeof val === 'bigint') {
+                return val.toString();
+            }
+            
+            // 如果有自定义replacer，继续使用
+            if (typeof replacer === 'function') {
+                return replacer(key, val);
+            } else if (Array.isArray(replacer) && replacer.includes(key)) {
+                return val;
+            } else if (replacer === null) {
+                return val;
+            }
+            
+            return val;
+        }, space);
+    }
+
+    /**
+     * 检测字符串是否为大整数
+     * @param {string} str - 要检测的字符串
+     * @returns {boolean} 是否为大整数
+     */
+    isBigInteger(str) {
+        return /^-?\d{16,}$/.test(str) || 
+               (typeof str === 'number' && !Number.isSafeInteger(str) && Number.isInteger(str));
     }
 } 

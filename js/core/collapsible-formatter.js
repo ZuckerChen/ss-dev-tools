@@ -48,6 +48,10 @@ class CollapsibleFormatter {
             return `<span class="json-number">${value}</span>`;
         }
 
+        if (typeof value === 'bigint') {
+            return `<span class="json-number json-bigint" title="大整数 (BigInt)">${value.toString()}</span>`;
+        }
+
         if (typeof value === 'boolean') {
             return `<span class="json-boolean">${value}</span>`;
         }
