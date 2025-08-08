@@ -25,52 +25,39 @@
         <!-- 侧边栏 -->
         <aside class="sidebar" id="sidebar">
             <nav class="nav-menu">
+                <!-- 新：开发工具（整合所有二级工具） -->
                 <div class="nav-category">
-                    <h3 class="nav-category-title" data-category="json">
-                        <span class="category-icon">🔧</span>
-                        <span class="category-text">JSON工具</span>
+                    <h3 class="nav-category-title" data-category="devtools">
+                        <span class="category-icon">🧰</span>
+                        <span class="category-text">开发工具</span>
                         <span class="category-arrow">▼</span>
                     </h3>
                     <ul class="nav-category-items">
                         <li><a href="#json-parser" data-tool="json-parser">JSON解析</a></li>
-                        
                         <li><a href="#json-compare" data-tool="json-compare">JSON对比</a></li>
-                    </ul>
-                </div>
-                <div class="nav-category">
-                    <h3 class="nav-category-title" data-category="xml">
-                        <span class="category-icon">📄</span>
-                        <span class="category-text">XML工具</span>
-                        <span class="category-arrow">▼</span>
-                    </h3>
-                    <ul class="nav-category-items">
                         <li><a href="#xml-parser" data-tool="xml-parser">XML解析</a></li>
-                    </ul>
-                </div>
-                <div class="nav-category">
-                    <h3 class="nav-category-title" data-category="encoding">
-                        <span class="category-icon">🔐</span>
-                        <span class="category-text">编码工具</span>
-                        <span class="category-arrow">▼</span>
-                    </h3>
-                    <ul class="nav-category-items">
                         <li><a href="#base64" data-tool="base64">Base64加解密</a></li>
                         <li><a href="#url-encode" data-tool="url-encode">URL编解码</a></li>
                         <li><a href="#unicode" data-tool="unicode">Unicode中文互转</a></li>
-                    </ul>
-                </div>
-                <div class="nav-category">
-                    <h3 class="nav-category-title" data-category="utils">
-                        <span class="category-icon">⚡</span>
-                        <span class="category-text">实用工具</span>
-                        <span class="category-arrow">▼</span>
-                    </h3>
-                    <ul class="nav-category-items">
                         <li><a href="#timestamp" data-tool="timestamp">时间戳转换</a></li>
                         <li><a href="#qrcode" data-tool="qrcode">二维码生成</a></li>
                         <li><a href="#qrcode-decode" data-tool="qrcode-decode">二维码解析</a></li>
                         <li><a href="#image-compress" data-tool="image-compress">图片压缩</a></li>
                     </ul>
+                </div>
+                <!-- 新：AI站点（无二级） -->
+                <div class="nav-category">
+                    <h3 class="nav-category-title top-link" data-category="ai" data-tool-target="ai-sites">
+                        <span class="category-icon">🤖</span>
+                        <span class="category-text">AI站点</span>
+                    </h3>
+                </div>
+                <!-- 新：热门博客（无二级） -->
+                <div class="nav-category">
+                    <h3 class="nav-category-title top-link" data-category="blog" data-tool-target="hot-blogs">
+                        <span class="category-icon">🔥</span>
+                        <span class="category-text">热门博客</span>
+                    </h3>
                 </div>
             </nav>
         </aside>
@@ -96,6 +83,28 @@
                             <p>时间戳、二维码、图片压缩等</p>
                         </div>
                     </div>
+                </div>
+            </div>
+
+            <!-- AI站点索引 -->
+            <div id="ai-sites" class="tool-panel">
+                <div class="tool-header">
+                    <h2>AI站点索引</h2>
+                    <p>常用AI网站，按类型分类展示（数据来自配置）</p>
+                </div>
+                <div class="tool-content">
+                    <div id="aiSitesContainer" class="site-grid"></div>
+                </div>
+            </div>
+
+            <!-- 热门博客索引 -->
+            <div id="hot-blogs" class="tool-panel">
+                <div class="tool-header">
+                    <h2>热门博客</h2>
+                    <p>优质技术/设计/产品等博客聚合（数据来自配置）</p>
+                </div>
+                <div class="tool-content">
+                    <div id="blogSitesContainer" class="site-grid"></div>
                 </div>
             </div>
 
@@ -499,6 +508,9 @@
     <script src="js/tools/json-tool.js"></script>
     <script src="js/tools/xml-tool.js"></script>
     <script src="js/tools/encoding-tool.js"></script>
+    
+    <!-- 站点配置 -->
+    <script src="js/data/site-config.js"></script>
     
     <!-- 工具库 -->
     <script src="https://cdn.jsdelivr.net/npm/qrcodejs2@0.0.2/qrcode.min.js"></script>

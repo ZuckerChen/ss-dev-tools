@@ -1512,3 +1512,13 @@ input[type="datetime-local"] {
     background-color: var(--primary-color);
     color: white;
 } 
+
+/* 站点索引样式 */
+.site-grid { display: grid; grid-template-columns: 1fr; gap: 20px; }
+.site-section { background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: var(--border-radius); padding: 16px; }
+.site-section-title { margin: 0 0 12px; font-size: 1.1rem; }
+.site-card-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 12px; }
+.site-card { display: block; padding: 12px; border: 1px solid var(--border-color); border-radius: 8px; background: var(--bg-primary); text-decoration: none; color: var(--text-primary); transition: transform .1s ease, box-shadow .1s ease; }
+.site-card:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,.08); }
+.site-card-title { font-weight: 600; margin-bottom: 6px; }
+.site-card-desc { font-size: .9rem; color: var(--text-muted); }

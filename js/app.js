@@ -14,6 +14,7 @@ class SSDevToolsApp {
         this.initNavigation();
         this.initTabs();
         this.initTools();
+        this.initSiteIndex();
         this.addAnimationStyles();
         
         this.initQrcodeTool();
@@ -125,6 +126,18 @@ class SSDevToolsApp {
                 link.classList.add('active');
             });
         });
+
+        // 顶层直达：AI站点、热门博客
+        document.querySelectorAll('.nav-category-title.top-link').forEach(title => {
+            title.addEventListener('click', () => {
+                const target = title.getAttribute('data-tool-target');
+                if (target) {
+                    this.showTool(target);
+                    // 高亮清理
+                    document.querySelectorAll('.nav-category-items a').forEach(l => l.classList.remove('active'));
+                }
+            });
+        });
     }
 
     // 显示工具
@@ -186,11 +199,48 @@ class SSDevToolsApp {
             });
             
             // 显示默认工具
-            this.showTool('welcome');
+            this.showTool('home');
             
         } catch (error) {
             console.error('工具初始化失败:', error);
         }
+    }
+
+    // 初始化站点索引面板
+    initSiteIndex() {
+        // 如果未加载配置，跳过
+        if (!window.SiteConfig) return;
+        this.renderSiteCards('aiSitesContainer', window.SiteConfig.aiSites);
+        this.renderSiteCards('blogSitesContainer', window.SiteConfig.blogSites);
+    }
+
+    // 根据配置渲染分组卡片
+    renderSiteCards(containerId, groups) {
+        const container = document.getElementById(containerId);
+        if (!container || !groups) return;
+        container.innerHTML = '';
+        Object.entries(groups).forEach(([groupName, sites]) => {
+            const section = document.createElement('section');
+            section.className = 'site-section';
+            section.innerHTML = `
+                <h3 class="site-section-title">${groupName}</h3>
+                <div class="site-card-list"></div>
+            `;
+            const list = section.querySelector('.site-card-list');
+            sites.forEach(site => {
+                const a = document.createElement('a');
+                a.className = 'site-card';
+                a.href = site.url;
+                a.target = '_blank';
+                a.rel = 'noopener noreferrer';
+                a.innerHTML = `
+                    <div class="site-card-title">${site.name}</div>
+                    <div class="site-card-desc">${site.desc || ''}</div>
+                `;
+                list.appendChild(a);
+            });
+            container.appendChild(section);
+        });
     }
 
     // 注册工具
