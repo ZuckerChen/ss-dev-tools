@@ -495,36 +495,36 @@ class JSONTool extends BaseTool {
      * @returns {*} 解析后的对象，大整数使用BigInt表示
      */
     parseJSONWithBigInt(text) {
-        // 简化方法：使用reviver直接检测和转换大整数
-        // 不进行预处理，避免破坏JSON结构
-        return JSON.parse(text, (key, value) => {
-            // 检查是否为数字类型且可能丢失精度
-            if (typeof value === 'number' && Number.isInteger(value)) {
-                // 检查是否超出安全整数范围
-                if (!Number.isSafeInteger(value)) {
-                    console.warn(`检测到精度丢失的数字: ${value}, 已尝试转换为BigInt`);
-                    // 尝试从字符串重新获取精确值（但这可能已经丢失精度）
-                    const valueStr = value.toString();
-                    try {
-                        return BigInt(Math.round(value));
-                    } catch (e) {
-                        return value;
-                    }
+        // 核心问题：JSON.parse在调用reviver之前就已经将大整数转换为number并丢失精度
+        // 解决方案：预处理JSON字符串，将可能丢失精度的大整数用引号包围，然后在reviver中转换为BigInt
+        
+        // 第一步：预处理JSON字符串，识别并保护大整数
+        let processedText = this.preprocessLargeIntegers(text);
+        
+        // 第二步：使用处理过的文本进行解析
+        return JSON.parse(processedText, (key, value) => {
+            // 处理特殊标记的大整数字符串
+            if (typeof value === 'string' && value.startsWith('__BIGINT__')) {
+                const numberStr = value.substring(10); // 移除 '__BIGINT__' 前缀
+                try {
+                    return BigInt(numberStr);
+                } catch (e) {
+                    console.warn(`无法将 ${numberStr} 转换为BigInt，保持原值`);
+                    return numberStr;
                 }
-                
-                // 对于15位以上的整数，也建议转换为BigInt（预防性措施）
-                const valueStr = value.toString();
-                if (valueStr.length >= 15 && Number.isInteger(value)) {
-                    try {
-                        return BigInt(value);
-                    } catch (e) {
-                        return value;
-                    }
+            }
+            
+            // 处理已经是number但超出安全范围的值（备用保护）
+            if (typeof value === 'number' && Number.isInteger(value) && !Number.isSafeInteger(value)) {
+                console.warn(`检测到精度已丢失的数字: ${value}, 尝试恢复`);
+                try {
+                    return BigInt(Math.round(value));
+                } catch (e) {
+                    return value;
                 }
             }
             
             // 检查字符串是否为纯数字且为大整数格式
-            // 但要排除明显的ID、编号等字符串字段
             if (typeof value === 'string' && /^-?\d{16,}$/.test(value)) {
                 // 检查字段名，如果是常见的ID字段名，不转换为BigInt
                 const idFieldPatterns = [
@@ -533,7 +533,6 @@ class JSONTool extends BaseTool {
                     'freeze', 'asset', 'detail', 'account', 'journal'
                 ];
                 
-                // 如果key包含这些模式，可能是ID字段，不转换
                 const isLikelyId = key && idFieldPatterns.some(pattern => 
                     key.toLowerCase().includes(pattern.toLowerCase())
                 );
@@ -541,7 +540,6 @@ class JSONTool extends BaseTool {
                 if (!isLikelyId) {
                     try {
                         const num = BigInt(value);
-                        // 只有当这个数字确实超出安全范围且不像ID时才转换
                         if (value.length >= 16 || !Number.isSafeInteger(Number(value))) {
                             return num;
                         }
@@ -553,6 +551,55 @@ class JSONTool extends BaseTool {
             
             return value;
         });
+    }
+
+    /**
+     * 预处理JSON字符串，将大整数用特殊标记包围以避免精度丢失
+     * @param {string} text - 原始JSON字符串
+     * @returns {string} 处理后的JSON字符串
+     */
+    preprocessLargeIntegers(text) {
+        // 更安全的方法：识别JSON值位置的大整数
+        // 避免复杂的字符串状态解析，使用简单但有效的模式匹配
+        
+        let result = text;
+        
+        // 方法1：匹配对象属性值中的大整数
+        result = result.replace(/("[\w\-_]+"\s*:\s*)(\d{15,})/g, (match, prefix, numStr) => {
+            const num = Number(numStr);
+            if (numStr.length >= 16 || !Number.isSafeInteger(num)) {
+                return prefix + `"__BIGINT__${numStr}"`;
+            }
+            return match;
+        });
+        
+        // 方法2：匹配数组中的大整数
+        result = result.replace(/([\[\s,]\s*)(\d{15,})(\s*[\s,\]])/g, (match, prefix, numStr, suffix) => {
+            const num = Number(numStr);
+            if (numStr.length >= 16 || !Number.isSafeInteger(num)) {
+                return prefix + `"__BIGINT__${numStr}"` + suffix;
+            }
+            return match;
+        });
+        
+        // 方法3：处理负数
+        result = result.replace(/("[\w\-_]+"\s*:\s*)(-\d{15,})/g, (match, prefix, numStr) => {
+            const num = Number(numStr);
+            if (numStr.length >= 16 || !Number.isSafeInteger(num)) {
+                return prefix + `"__BIGINT__${numStr}"`;
+            }
+            return match;
+        });
+        
+        result = result.replace(/([\[\s,]\s*)(-\d{15,})(\s*[\s,\]])/g, (match, prefix, numStr, suffix) => {
+            const num = Number(numStr);
+            if (numStr.length >= 16 || !Number.isSafeInteger(num)) {
+                return prefix + `"__BIGINT__${numStr}"` + suffix;
+            }
+            return match;
+        });
+        
+        return result;
     }
 
 
