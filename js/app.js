@@ -14,7 +14,7 @@ class SSDevToolsApp {
         this.initNavigation();
         this.initTabs();
         this.initTools();
-        this.initSiteIndex();
+        this.initDevSites();
         this.addAnimationStyles();
         
         this.initQrcodeTool();
@@ -127,7 +127,7 @@ class SSDevToolsApp {
             });
         });
 
-        // 顶层直达：AI站点、热门博客
+        // 顶层直达：开发站点大全
         document.querySelectorAll('.nav-category-title.top-link').forEach(title => {
             title.addEventListener('click', () => {
                 const target = title.getAttribute('data-tool-target');
@@ -208,76 +208,167 @@ class SSDevToolsApp {
         }
     }
 
-    // 初始化站点索引面板
-    initSiteIndex() {
-        // 如果未加载配置，跳过
-        if (!window.SiteConfig) return;
-        this.renderSiteCards('aiSitesContainer', window.SiteConfig.aiSites);
-        this.renderSiteCards('blogSitesContainer', window.SiteConfig.blogSites);
+    // 初始化开发站点大全
+    initDevSites() {
+        if (!window.DevSitesConfig) {
+            console.warn('开发站点配置未加载');
+            return;
+        }
 
-        // 绑定过滤
-        const aiFilterBtns = document.querySelectorAll('#ai-sites .filter-btn');
-        aiFilterBtns.forEach(btn => {
-            btn.addEventListener('click', () => {
-                aiFilterBtns.forEach(b => b.classList.remove('active'));
-                btn.classList.add('active');
-                const key = btn.dataset.filter;
-                if (key === 'all') {
-                    this.renderSiteCards('aiSitesContainer', window.SiteConfig.aiSites);
-                } else {
-                    const filtered = {};
-                    if (window.SiteConfig.aiSites[key]) filtered[key] = window.SiteConfig.aiSites[key];
-                    this.renderSiteCards('aiSitesContainer', filtered);
-                }
+        this.currentCategory = 'all';
+        this.searchTerm = '';
+        
+        // 渲染所有站点
+        this.renderDevSites();
+        
+        // 绑定搜索功能
+        const searchInput = document.getElementById('siteSearch');
+        const clearSearch = document.getElementById('clearSearch');
+        
+        if (searchInput) {
+            searchInput.addEventListener('input', (e) => {
+                this.searchTerm = e.target.value.toLowerCase();
+                this.renderDevSites();
             });
-        });
-
-        const blogFilterBtns = document.querySelectorAll('#hot-blogs .filter-btn');
-        blogFilterBtns.forEach(btn => {
+        }
+        
+        if (clearSearch) {
+            clearSearch.addEventListener('click', () => {
+                if (searchInput) searchInput.value = '';
+                this.searchTerm = '';
+                this.renderDevSites();
+            });
+        }
+        
+        // 绑定分类过滤
+        document.querySelectorAll('.filter-btn').forEach(btn => {
             btn.addEventListener('click', () => {
-                blogFilterBtns.forEach(b => b.classList.remove('active'));
+                // 更新按钮状态
+                document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
                 btn.classList.add('active');
-                this.renderSiteCards('blogSitesContainer', window.SiteConfig.blogSites);
+                
+                // 更新当前分类
+                this.currentCategory = btn.dataset.category;
+                this.renderDevSites();
             });
         });
     }
 
-    // 根据配置渲染分组卡片
-    renderSiteCards(containerId, groups) {
-        const container = document.getElementById(containerId);
-        if (!container || !groups) return;
-        container.innerHTML = '';
-
-        // 排序：按热度（若提供）降序，否则保持原序
-        const entries = Object.entries(groups);
-        entries.forEach(([groupName, sites]) => {
-            const section = document.createElement('section');
-            section.className = 'site-section';
-            section.innerHTML = `
-                <h3 class="site-section-title">${groupName}</h3>
-                <div class="site-card-list"></div>
-            `;
-            const list = section.querySelector('.site-card-list');
-            const sorted = [...sites].sort((a, b) => (b.hot || 0) - (a.hot || 0));
-            sorted.forEach(site => {
-                const a = document.createElement('a');
-                a.className = 'site-card';
-                a.href = site.url;
-                a.target = '_blank';
-                a.rel = 'noopener noreferrer';
-                const iconUrl = site.icon || (site.url ? (new URL(site.url).origin + '/favicon.ico') : '');
-                a.innerHTML = `
-                    <div style="display:flex;align-items:center;gap:10px;">
-                        <img src="${iconUrl}" onerror="this.style.display='none'" alt="" width="20" height="20" style="border-radius:4px;">
-                        <div>
-                            <div class="site-card-title">${site.name}</div>
-                            <div class="site-card-desc">${site.desc || ''}</div>
-                        </div>
-                    </div>`;
-                list.appendChild(a);
+    // 渲染开发站点
+    renderDevSites() {
+        const container = document.getElementById('devSitesContainer');
+        const totalSitesEl = document.getElementById('totalSites');
+        const visibleSitesEl = document.getElementById('visibleSites');
+        
+        if (!container || !window.DevSitesConfig) return;
+        
+        // 获取所有站点
+        let allSites = [];
+        let totalCount = 0;
+        
+        Object.entries(window.DevSitesConfig).forEach(([category, sites]) => {
+            totalCount += sites.length;
+            sites.forEach(site => {
+                allSites.push({
+                    ...site,
+                    category: category,
+                    categoryName: this.getCategoryName(category)
+                });
             });
-            container.appendChild(section);
         });
+        
+        // 过滤站点
+        let filteredSites = allSites;
+        
+        // 分类过滤
+        if (this.currentCategory !== 'all') {
+            filteredSites = filteredSites.filter(site => site.category === this.currentCategory);
+        }
+        
+        // 搜索过滤
+        if (this.searchTerm) {
+            filteredSites = filteredSites.filter(site => {
+                const searchText = `${site.name} ${site.desc} ${site.tags.join(' ')}`.toLowerCase();
+                return searchText.includes(this.searchTerm);
+            });
+        }
+        
+        // 按分类分组
+        const groupedSites = {};
+        filteredSites.forEach(site => {
+            if (!groupedSites[site.category]) {
+                groupedSites[site.category] = [];
+            }
+            groupedSites[site.category].push(site);
+        });
+        
+        // 渲染HTML
+        let html = '';
+        Object.entries(groupedSites).forEach(([category, sites]) => {
+            const categoryName = this.getCategoryName(category);
+            html += `
+                <div class="site-category">
+                    <h3 class="category-title">${categoryName}</h3>
+                    <div class="site-grid">
+                        ${sites.map(site => this.renderSiteCard(site)).join('')}
+                    </div>
+                </div>
+            `;
+        });
+        
+        if (html === '') {
+            html = '<div class="no-results">没有找到匹配的站点</div>';
+        }
+        
+        container.innerHTML = html;
+        
+        // 更新统计
+        if (totalSitesEl) totalSitesEl.textContent = totalCount;
+        if (visibleSitesEl) visibleSitesEl.textContent = filteredSites.length;
+    }
+
+    // 渲染站点卡片
+    renderSiteCard(site) {
+        const iconUrl = this.getSiteIcon(site.url);
+        return `
+            <a href="${site.url}" target="_blank" rel="noopener noreferrer" class="site-card">
+                <div class="site-header">
+                    <img src="${iconUrl}" alt="${site.name}" class="site-icon" onerror="this.style.display='none'">
+                    <h4 class="site-name">${site.name}</h4>
+                </div>
+                <p class="site-desc">${site.desc}</p>
+                <div class="site-tags">
+                    ${site.tags.map(tag => `<span class="tag">${tag}</span>`).join('')}
+                </div>
+            </a>
+        `;
+    }
+
+    // 获取站点图标
+    getSiteIcon(url) {
+        try {
+            const domain = new URL(url).origin;
+            return `${domain}/favicon.ico`;
+        } catch {
+            return 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16"><rect width="16" height="16" fill="%23ddd"/></svg>';
+        }
+    }
+
+    // 获取分类中文名
+    getCategoryName(category) {
+        const categoryNames = {
+            frontend: '前端开发',
+            backend: '后端开发',
+            database: '数据库',
+            cloud: '云服务',
+            tools: '开发工具',
+            vcs: '版本控制',
+            learning: '学习资源',
+            design: '设计资源',
+            devops: '监控运维',
+            ai: 'AI工具与服务'
+        };
+        return categoryNames[category] || category;
     }
 
     // 注册工具
@@ -605,14 +696,133 @@ class SSDevToolsApp {
                 this.convertDateToTimestamp();
             });
         }
+
+        // 初始化时间选择器
+        this.initTimePickerControls();
+        
         // 设置当前时间为默认值
+        this.setCurrentTimeToInputs();
+    }
+
+    // 初始化时间选择器控件
+    initTimePickerControls() {
+        const dateTimeInput = document.getElementById('dateTimeInput');
+        const hourInput = document.getElementById('hourInput');
+        const minuteInput = document.getElementById('minuteInput');
+        const secondInput = document.getElementById('secondInput');
+        const setCurrentTimeBtn = document.getElementById('setCurrentTime');
+        const resetTimeBtn = document.getElementById('resetTime');
+
+        // 当datetime-local输入改变时，同步到时分秒输入框
+        if (dateTimeInput) {
+            dateTimeInput.addEventListener('change', () => {
+                this.syncTimeFromDateTimeInput();
+            });
+        }
+
+        // 当时分秒输入框改变时，同步到datetime-local输入框
+        [hourInput, minuteInput, secondInput].forEach(input => {
+            if (input) {
+                input.addEventListener('change', () => {
+                    this.syncTimeToDateTimeInput();
+                });
+                input.addEventListener('input', () => {
+                    this.syncTimeToDateTimeInput();
+                });
+            }
+        });
+
+        // 设置当前时间按钮
+        if (setCurrentTimeBtn) {
+            setCurrentTimeBtn.addEventListener('click', () => {
+                this.setCurrentTimeToInputs();
+            });
+        }
+
+        // 重置时间按钮
+        if (resetTimeBtn) {
+            resetTimeBtn.addEventListener('click', () => {
+                this.resetTimeInputs();
+            });
+        }
+    }
+
+    // 设置当前时间到所有输入框
+    setCurrentTimeToInputs() {
         const now = new Date();
+        
+        // 设置日期时间输入框（精确到秒）
         const localDateTime = new Date(now.getTime() - (now.getTimezoneOffset() * 60000))
-            .toISOString().slice(0, 16);
+            .toISOString().slice(0, 19);
         const dateTimeInput = document.getElementById('dateTimeInput');
         if (dateTimeInput) {
             dateTimeInput.value = localDateTime;
         }
+
+        // 设置时分秒输入框
+        const hourInput = document.getElementById('hourInput');
+        const minuteInput = document.getElementById('minuteInput');
+        const secondInput = document.getElementById('secondInput');
+        
+        if (hourInput) hourInput.value = now.getHours();
+        if (minuteInput) minuteInput.value = now.getMinutes();
+        if (secondInput) secondInput.value = now.getSeconds();
+    }
+
+    // 重置时间输入框
+    resetTimeInputs() {
+        const hourInput = document.getElementById('hourInput');
+        const minuteInput = document.getElementById('minuteInput');
+        const secondInput = document.getElementById('secondInput');
+        
+        if (hourInput) hourInput.value = 0;
+        if (minuteInput) minuteInput.value = 0;
+        if (secondInput) secondInput.value = 0;
+        
+        this.syncTimeToDateTimeInput();
+    }
+
+    // 从datetime-local输入框同步时间到时分秒输入框
+    syncTimeFromDateTimeInput() {
+        const dateTimeInput = document.getElementById('dateTimeInput');
+        if (!dateTimeInput || !dateTimeInput.value) return;
+
+        const date = new Date(dateTimeInput.value);
+        const hourInput = document.getElementById('hourInput');
+        const minuteInput = document.getElementById('minuteInput');
+        const secondInput = document.getElementById('secondInput');
+        
+        if (hourInput) hourInput.value = date.getHours();
+        if (minuteInput) minuteInput.value = date.getMinutes();
+        if (secondInput) secondInput.value = date.getSeconds();
+    }
+
+    // 从时分秒输入框同步时间到datetime-local输入框
+    syncTimeToDateTimeInput() {
+        const dateTimeInput = document.getElementById('dateTimeInput');
+        const hourInput = document.getElementById('hourInput');
+        const minuteInput = document.getElementById('minuteInput');
+        const secondInput = document.getElementById('secondInput');
+        
+        if (!dateTimeInput || !hourInput || !minuteInput || !secondInput) return;
+
+        // 获取当前日期部分
+        let currentValue = dateTimeInput.value;
+        if (!currentValue) {
+            // 如果没有值，使用今天的日期
+            const today = new Date();
+            currentValue = today.toISOString().slice(0, 10) + 'T00:00:00';
+        }
+
+        // 解析当前日期
+        const datePart = currentValue.split('T')[0];
+        
+        // 构建新的日期时间字符串
+        const hour = String(parseInt(hourInput.value) || 0).padStart(2, '0');
+        const minute = String(parseInt(minuteInput.value) || 0).padStart(2, '0');
+        const second = String(parseInt(secondInput.value) || 0).padStart(2, '0');
+        
+        dateTimeInput.value = `${datePart}T${hour}:${minute}:${second}`;
     }
 
     // 定时显示当前时间

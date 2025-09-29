@@ -46,18 +46,11 @@
                         <li><a href="#image-compress" data-tool="image-compress">图片压缩</a></li>
                     </ul>
                 </div>
-                <!-- 新：AI站点（无二级） -->
+                <!-- 开发站点大全 -->
                 <div class="nav-category">
-                    <h3 class="nav-category-title top-link" data-category="ai" data-tool-target="ai-sites">
-                        <span class="category-icon">🤖</span>
-                        <span class="category-text">AI站点</span>
-                    </h3>
-                </div>
-                <!-- 新：热门博客（无二级） -->
-                <div class="nav-category">
-                    <h3 class="nav-category-title top-link" data-category="blog" data-tool-target="hot-blogs">
-                        <span class="category-icon">🔥</span>
-                        <span class="category-text">热门博客</span>
+                    <h3 class="nav-category-title top-link" data-category="dev-sites" data-tool-target="dev-sites">
+                        <span class="category-icon">🌐</span>
+                        <span class="category-text">开发站点大全</span>
                     </h3>
                 </div>
             </nav>
@@ -87,35 +80,50 @@
                 </div>
             </div>
 
-            <!-- AI站点索引 -->
-            <div id="ai-sites" class="tool-panel">
+            <!-- 开发站点大全 -->
+            <div id="dev-sites" class="tool-panel">
                 <div class="tool-header">
-                    <h2>AI站点索引</h2>
-                    <div class="filter-bar">
-                        <button class="btn secondary filter-btn" data-filter="all">全部</button>
-                        <button class="btn secondary filter-btn" data-filter="对话">对话</button>
-                        <button class="btn secondary filter-btn" data-filter="写作">写作</button>
-                        <button class="btn secondary filter-btn" data-filter="绘画">绘画</button>
-                        <button class="btn secondary filter-btn" data-filter="视频">视频</button>
-                        <button class="btn secondary filter-btn" data-filter="办公">办公</button>
-                        <button class="btn secondary filter-btn" data-filter="音乐">音乐</button>
-                    </div>
+                    <h2>开发站点大全</h2>
+                    <p>精选开发者常用的网站和工具</p>
                 </div>
                 <div class="tool-content">
-                    <div id="aiSitesContainer" class="site-grid"></div>
-                </div>
-            </div>
-
-            <!-- 热门博客索引 -->
-            <div id="hot-blogs" class="tool-panel">
-                <div class="tool-header">
-                    <h2>热门博客</h2>
-                    <div class="filter-bar">
-                        <button class="btn secondary filter-btn" data-filter="all" data-type="blog">全部</button>
+                    <!-- 搜索栏 -->
+                    <div class="search-section">
+                        <div class="search-bar">
+                            <input type="text" id="siteSearch" placeholder="搜索站点名称、描述或标签..." class="search-input">
+                            <button id="clearSearch" class="btn secondary">清空</button>
+                        </div>
                     </div>
-                </div>
-                <div class="tool-content">
-                    <div id="blogSitesContainer" class="site-grid"></div>
+                    
+                    <!-- 分类过滤 -->
+                    <div class="filter-section">
+                        <div class="category-filters">
+                            <button class="filter-btn active" data-category="all">全部</button>
+                            <button class="filter-btn" data-category="frontend">前端开发</button>
+                            <button class="filter-btn" data-category="backend">后端开发</button>
+                            <button class="filter-btn" data-category="database">数据库</button>
+                            <button class="filter-btn" data-category="cloud">云服务</button>
+                            <button class="filter-btn" data-category="tools">开发工具</button>
+                            <button class="filter-btn" data-category="vcs">版本控制</button>
+                            <button class="filter-btn" data-category="learning">学习资源</button>
+                            <button class="filter-btn" data-category="design">设计资源</button>
+                            <button class="filter-btn" data-category="devops">监控运维</button>
+                            <button class="filter-btn" data-category="ai">AI工具</button>
+                        </div>
+                    </div>
+                    
+                    <!-- 站点列表 -->
+                    <div id="devSitesContainer" class="sites-container">
+                        <!-- 动态生成内容 -->
+                    </div>
+                    
+                    <!-- 统计信息 -->
+                    <div class="stats-section">
+                        <div class="site-stats">
+                            <span>共收录 <span id="totalSites">0</span> 个站点</span>
+                            <span>当前显示 <span id="visibleSites">0</span> 个</span>
+                        </div>
+                    </div>
                 </div>
             </div>
 
@@ -476,7 +484,29 @@
                     <div id="date-to-timestamp" class="tab-content">
                         <div class="input-section">
                             <label for="dateTimeInput">选择日期时间：</label>
-                            <input type="datetime-local" id="dateTimeInput">
+                            <div class="datetime-picker">
+                                <input type="datetime-local" id="dateTimeInput" step="1">
+                                <div class="time-precision-controls">
+                                    <div class="time-inputs">
+                                        <label>
+                                            <span>时:</span>
+                                            <input type="number" id="hourInput" min="0" max="23" value="0">
+                                        </label>
+                                        <label>
+                                            <span>分:</span>
+                                            <input type="number" id="minuteInput" min="0" max="59" value="0">
+                                        </label>
+                                        <label>
+                                            <span>秒:</span>
+                                            <input type="number" id="secondInput" min="0" max="59" value="0">
+                                        </label>
+                                    </div>
+                                    <div class="quick-time-buttons">
+                                        <button type="button" class="btn secondary small" id="setCurrentTime">当前时间</button>
+                                        <button type="button" class="btn secondary small" id="resetTime">重置时间</button>
+                                    </div>
+                                </div>
+                            </div>
                             <button id="convertDateTime" class="btn primary">转换</button>
                         </div>
                         <div class="output-section">
@@ -626,7 +656,7 @@
      <script src="js/tools/cron-tool.js"></script>
     
     <!-- 站点配置 -->
-    <script src="js/data/site-config.js"></script>
+    <script src="js/data/dev-sites-config.js"></script>
     
     <!-- 工具库 -->
     <script src="https://cdn.jsdelivr.net/npm/qrcodejs2@0.0.2/qrcode.min.js"></script>
